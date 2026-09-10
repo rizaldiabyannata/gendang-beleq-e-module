@@ -3,7 +3,10 @@
 import React from 'react';
 import { sx } from './sx';
 import { configured, errText, supabase } from '../lib/supabase';
-import { validate } from '../../supabase/functions/_shared/grading.ts';
+import { teks, validate } from '../../supabase/functions/_shared/grading.ts';
+import {
+  dbLevel, dopplerHeard as dopplerOf, pitch as pitchOf, sampleRate, siapkan,
+} from '../../supabase/functions/_shared/physics.ts';
 import { bootstrap, fetchDraft, fetchPublished, joinClass, publish, saveDraft, saveProgress, signOut, teacherSignIn } from '../lib/session';
 import { hydrateProgress, pickProgress } from '../lib/progress';
 import { bankScore, createClass, essayScore, finalScore, gradeLkpd, gradeSubmission, listClasses, loadClassWork, toCsv, updateClass, watchClass } from '../lib/teacher';
@@ -49,6 +52,9 @@ export default class EModul extends React.Component {
     ansMame: 148, ansNine: 152, ansPlaying: false,
     db: 0, hits: 0,
     dopRunning: false, dopPos: -1, dopF: 500, dopV: 12, dopHeard: 500,
+    // Misi yang sedang dibuka siswa: indeks butir di bank dugaan, atau null.
+    // Selama sebuah misi terbuka, tuas yang sedang diuji terkunci.
+    misi: null, misiPilih: null,
     konsep: 'komponen', glos: null, toast: '', saveFailed: false, muted: false,
     fields: {}, answers: {}, refleksi: {}, videoUrl: '', videoLoaded: '',
     bankId: null, draft: {}, adminBank: null
@@ -67,6 +73,24 @@ export default class EModul extends React.Component {
       this.raf = requestAnimationFrame(this.loop);
     };
     this.ensureLoop();
+    this.loadDrum();
+  }
+
+  // public/gendang.wav adalah 130 ms tabuhan Gendang Mame sungguhan, dipotong dari
+  // 0,140 sampai 0,270 detik rekaman asli, mono dan dinormalkan. Frekuensi dasarnya
+  // 79 Hz, jauh di bawah ujung atas slider, jadi sampel ini membawa serangan bunyi
+  // sementara tinggi nadanya tetap dipegang osilator.
+  //
+  // Dibaca lewat OfflineAudioContext supaya tidak perlu menunggu sentuhan siswa dan
+  // sudah siap sebelum tabuhan pertama. Kalau gagal, hit() tetap berbunyi tanpa ini.
+  async loadDrum() {
+    try {
+      const res = await fetch('gendang.wav');
+      if (!res.ok) return;
+      const bytes = await res.arrayBuffer();
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      this._drum = await new OAC(1, 1, 44100).decodeAudioData(bytes);
+    } catch { this._drum = null; }
   }
   // The loop only needs to run while the oscilloscope is on screen or the Doppler is
   // moving. It used to wake the main thread 60 times a second for the whole session.
@@ -138,11 +162,14 @@ export default class EModul extends React.Component {
           const rec = this.state.answers[b.id + ':' + ii];
           if (rec) { d++; if (rec.ok) r++; }
         });
-        if (d === (b.items || []).length && (r / d * 100) >= (b.kkm || 70)) {
-          this.award('kuis', 30, 'Nilai ' + Math.round(r / d * 100) + ' — ' + b.title + ' tuntas!');
+        if (b.jenis === 'lab') this.cekMisi(b);
+        else if (d === (b.items || []).length && (r / d * 100) >= (b.kkm || 70)) {
+          this.award('kuis', 30, 'Nilai ' + Math.round(r / d * 100) + ' — ' + teks(b.title) + ' tuntas!');
         }
       });
-      this.toast('+' + (data.xp || 0) + ' XP · ' + (data.ok ? 'Jawaban tepat!' : 'Belum tepat, baca umpan baliknya'));
+      this.toast(b.jenis === 'lab'
+        ? (data.ok ? 'Dugaanmu tepat! +' + (data.xp || 0) + ' XP' : 'Dugaanmu meleset — sekarang lihat sendiri buktinya')
+        : '+' + (data.xp || 0) + ' XP · ' + (data.ok ? 'Jawaban tepat!' : 'Belum tepat, baca umpan baliknya'));
     } catch (e) {
       this.toast(errText(e));
     } finally {
@@ -160,9 +187,12 @@ export default class EModul extends React.Component {
     if (!data) return;
     const answers = {};
     for (const r of data) {
+      const rev = r.reveal || {};
       answers[r.bank_id + ':' + r.item_index] = {
         v: r.answer, ok: r.auto_ok, ratio: r.auto_ratio, needsTeacher: r.needs_teacher,
-        reveal: r.reveal || {}, teacherScore: r.teacher_score, teacherNote: r.teacher_note,
+        // The Edge Function stores the discussion note alongside the key now, so it
+        // survives a reload. It used to arrive once in the response and vanish.
+        fb: rev.fb || '', reveal: rev, teacherScore: r.teacher_score, teacherNote: r.teacher_note,
       };
     }
     this.setState({ answers });
@@ -429,6 +459,23 @@ export default class EModul extends React.Component {
     } catch { this.toast('Gagal mengunduh berkas LKPD'); }
   }
 
+  // A badge for each simulation whose missions have all been answered, and one for
+  // the lab as a whole. Answering is what earns it, not answering correctly: a
+  // student who guesses wrong and then reads why has done exactly what the lab asks.
+  cekMisi(b) {
+    const items = b.items || [];
+    const sudah = (it, i) => !!this.state.answers[b.id + ':' + i];
+    const per = { drum: 'dugaanDrum', doppler: 'dugaanDoppler', ansambel: 'dugaanAnsambel' };
+    const nama = { drum: 'Penabuh', doppler: 'Pengamat Doppler', ansambel: 'Pendengar Pelayangan' };
+    Object.keys(per).forEach((sim) => {
+      const punya = items.filter((it) => it.sim === sim);
+      if (punya.length && punya.every((it) => sudah(it, items.indexOf(it)))) {
+        this.award(per[sim], 15, nama[sim] + ' — semua dugaan terbukti!');
+      }
+    });
+    if (items.length && items.every(sudah)) this.award('lab', 20, 'Seluruh dugaan lab tuntas!');
+  }
+
   toast(text) {
     this.setState({ toast: text });
     clearTimeout(this._tt);
@@ -466,14 +513,10 @@ export default class EModul extends React.Component {
     this.setState({ muted });
     if (this._master) this._master.gain.value = muted ? 0 : 1;
   }
-  // The pitch the membrane actually produces. hit(), the on-screen readout and
-  // drawWave() all read this, so what a student hears is what they can record in
-  // the LKPD — previously the label showed st.freq and never moved with tension.
-  pitch(zone) {
-    const st = this.state;
-    const sizeK = st.drum === 'mame' ? 0.72 : 1.28;
-    return Math.max(45, st.freq * sizeK * (0.65 + 0.7 * st.tension) * (zone === 'pinggir' ? 1.7 : 1));
-  }
+  // The formulas themselves live in supabase/functions/_shared/physics.ts, which the
+  // Edge Function imports too. A lab mission is marked by recomputing the simulation,
+  // so what a student hears here and what the server grades there cannot disagree.
+  pitch(zone) { return pitchOf(this.state, zone); }
 
   hit(zone) {
     const st = this.state;
@@ -491,8 +534,26 @@ export default class EModul extends React.Component {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(f); f.connect(g); g.connect(this.out());
+    // Envelope first, medium filter second. Both the oscillator and the recorded
+    // strike pass through the one filter, so choosing Air or Zat padat muffles the
+    // real gendang exactly as much as it muffles the synthesised tone.
+    osc.connect(g); g.connect(f); f.connect(this.out());
     osc.start(t); osc.stop(t + dur + 0.1);
+
+    // The recorded strike carries the character; the oscillator above carries the
+    // pitch. It gets its own gain rather than sharing the envelope, because the
+    // envelope's 10 ms ramp-in would soften the very attack this sample exists for.
+    // The 0.8 is a mix balance, turn it down if the strike ever sounds harsh.
+    if (this._drum) {
+      const src = ctx.createBufferSource();
+      src.buffer = this._drum;
+      src.playbackRate.value = sampleRate(st, zone);
+      const sg = ctx.createGain();
+      sg.gain.value = vol * 0.8;
+      src.connect(sg); sg.connect(f);
+      src.start(t);
+    }
+
     if (zone === 'pinggir') {
       const len = Math.floor(ctx.sampleRate * 0.12);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate); const d = buf.getChannelData(0);
@@ -503,14 +564,11 @@ export default class EModul extends React.Component {
       src.connect(hp); hp.connect(ng); ng.connect(this.out()); src.start(t);
     }
     this.env = 1;
-    // TI = 10 log(I/I0) and I is proportional to amplitude squared, so the readout
-    // is 20 log(A) + konstanta. It was linear in amplitude while being labelled dB.
-    const db = Math.round(20 * Math.log10(Math.max(0.02, st.amp)) + 100
-      + (zone === 'tengah' ? 3 : -3)
-      + (st.medium === 'padat' ? -6 : st.medium === 'air' ? -3 : 0));
     const hits = this.state.hits + 1;
-    this.setState({ db, hits, lastHit: zone === 'tengah' ? 'titik tengah' : 'pinggir membran' });
-    if (hits === 5) this.award('tabuh5', 20, 'Penabuh pemula!');
+    this.setState({
+      db: Math.round(dbLevel(st, zone)), hits,
+      lastHit: zone === 'tengah' ? 'titik tengah' : 'pinggir membran',
+    });
   }
 
   // Mame and Nine sounded together. Two nearby frequencies beat against each other at
@@ -537,7 +595,6 @@ export default class EModul extends React.Component {
     clearTimeout(this._ansT);
     this._ansT = setTimeout(() => {
       this.setState({ ansPlaying: false });
-      this.award('ansambel', 20, 'Pelayangan terdengar!');
     }, dur * 1000);
   }
 
@@ -580,17 +637,7 @@ export default class EModul extends React.Component {
   stopDop() {
     try { if (this._do) { this._do.stop(); this._do.disconnect(); this._do = null; } } catch {}
   }
-  // The rombongan passes the listener at a distance rather than running them over,
-  // so only the component of its velocity along the line of sight shifts the pitch.
-  // That component is vs*cos(theta), which glides smoothly through zero at the
-  // closest point. The old version switched on the sign of pos, producing a step.
-  dopplerHeard(pos) {
-    const st = this.state;
-    const v = 343;
-    const d = 0.45;                                   // perpendicular distance, same units as pos
-    const radial = st.dopV * (-pos) / Math.sqrt(pos * pos + d * d);   // positive while approaching
-    return Math.round(st.dopF * v / (v - radial));
-  }
+  dopplerHeard(pos) { return Math.round(dopplerOf(this.state, pos)); }
 
   stepDoppler(dt) {
     const pos = this._dopPos + dt * 0.34;
@@ -599,7 +646,6 @@ export default class EModul extends React.Component {
       this._dopPos = 1;
       this.setState({ dopRunning: false, dopPos: 1, dopHeard: heard });
       this.stopDop();
-      this.award('doppler', 25, 'Efek Doppler teramati!');
       return;
     }
     this._dopPos = pos;
@@ -725,10 +771,14 @@ export default class EModul extends React.Component {
     const nextIdx = activeIdx === -1 ? -1 : activeIdx + 1;
     const nextDef = nextIdx > -1 ? stepDefs[nextIdx] : null;
 
+    // Every one of these asks the student to have understood something. The three
+    // they replaced opened for striking a drum five times, for letting an animation
+    // finish, and for letting a sound play to the end.
     const badgeDefs = [
-      ['Penabuh', 'tabuh5', 'Tabuh gendang lima kali di lab'],
+      ['Penabuh', 'dugaanDrum', 'Buktikan semua dugaan di simulasi tabuh gendang'],
+      ['Pengamat Doppler', 'dugaanDoppler', 'Buktikan semua dugaan di simulasi rombongan'],
+      ['Pendengar Pelayangan', 'dugaanAnsambel', 'Buktikan semua dugaan di simulasi Mame & Nine'],
       ['Peneliti', 'lkpd', 'Simpan satu LKPD yang lengkap'],
-      ['Pengamat Doppler', 'doppler', 'Jalankan simulasi rombongan sampai selesai'],
       ['Tuntas KKM', 'kuis', 'Selesaikan satu bank soal di atas KKM']
     ];
     const badgeCards = badgeDefs.map(([name, key, how]) => ({
@@ -758,22 +808,107 @@ export default class EModul extends React.Component {
     const materiTabs = ['pendahuluan', 'kesenian', 'konsep', 'sifat', 'resonansi', 'doppler', 'glosarium'].map((k, i) =>
       mkTab(st.materiTab, k, (i + 1) + ' · ' + ['Pendahuluan', 'Gendang Beleq', 'Komponen', 'Sifat', 'Resonansi & cepat rambat', 'Doppler & intensitas', 'Glosarium'][i], (key) => ({ materiTab: key })));
 
+    // The lab mission bank lives on the Lab screen, not in the question-bank list.
+    // It is still a bank on the server — same table, same one-attempt constraint —
+    // but a student meets it beside the simulation it belongs to.
+    const semuaBank = st.cms.banks || [];
+    const labBank = semuaBank.filter(b => b.jenis === 'lab')[0] || null;
+    const allBanks = semuaBank.filter(b => b.jenis !== 'lab');
+
     const labTabs = ['drum', 'doppler', 'ansambel'].map((k, i) =>
       mkTab(st.labTab, k, (i + 1) + ' · ' + ['Tabuh gendang', 'Efek Doppler', 'Mame & Nine'][i], (key) => ({ labTab: key })));
+
+    // ── Dugaan ────────────────────────────────────────────────────────────────
+    // The seed is the student id, so two students meet different numbers for the
+    // same mission and the Edge Function can rebuild exactly what this one saw
+    // without trusting the browser to send it back. Guests get a stable seed of
+    // their own; they can play, and the join gate stops them at submit.
+    const misiSeed = (i) => (st.me ? st.me.id : 'tamu') + '|' + (labBank ? labBank.id : 'lab1') + '|' + i;
+    const misiItems = labBank ? (labBank.items || []) : [];
+    const misiRec = (i) => (labBank ? st.answers[labBank.id + ':' + i] : null);
+    // One call resolves the conditions, the direction, the wording and the right
+    // answer together. The Edge Function calls the same one, so the question printed
+    // here and the answer marked there can never come from different draws.
+    const misiSiap = (i) => siapkan(misiItems[i], misiSeed(i));
+    const misiAktif = st.misi == null ? null : misiItems[st.misi];
+    const misiParams = misiAktif ? misiSiap(st.misi).params : null;
+    // A knob is frozen only while the mission that tests it is open and unanswered.
+    // Everything else on the bench keeps working, so a student who just wants to
+    // play with the drum is never stopped.
+    const terkunci = misiAktif && !misiRec(st.misi) ? misiAktif.ubah : null;
+
+    // Opening a mission sets the bench to the conditions it asks about.
+    const bukaMisi = (i) => {
+      if (st.misi === i) { this.setState({ misi: null, misiPilih: null }); return; }
+      const it = misiItems[i];
+      if (!it) return;
+      const p = misiSiap(i).params;
+      this.setState({
+        misi: i, misiPilih: null, labTab: it.sim,
+        drum: p.drum, freq: p.freq, tension: p.tension, amp: p.amp, medium: p.medium,
+        dopF: p.dopF, dopV: p.dopV, ansMame: p.ansMame, ansNine: p.ansNine,
+        dopRunning: false, dopPos: -1, dopHeard: Math.round(p.dopF),
+      }, () => { this._dopPos = -1; this.stopDop(); });
+    };
+
+    const ARAH = [['naik', 'Naik'], ['tetap', 'Tetap'], ['turun', 'Turun']];
+    const misiCards = misiItems.map((it, i) => {
+      const rec = misiRec(i);
+      const open = st.misi === i;
+      const siap = misiSiap(i);
+      const benar = rec ? siap.benar : null;
+      return {
+        n: String(i + 1).padStart(2, '0'),
+        sim: it.sim, q: siap.q, open, done: !!rec, ok: !!(rec && rec.ok),
+        onToggle: () => bukaMisi(i),
+        status: rec ? (rec.ok ? 'Dugaanmu tepat' : 'Dugaanmu meleset') : open ? 'Sedang dikerjakan' : 'Belum ditebak',
+        statusStyle: 'font:600 12px/1.2 var(--font-outfit),sans-serif;'
+          + (rec ? (rec.ok ? 'color:var(--ok)' : 'color:var(--warn)') : 'color:var(--ink-3)'),
+        rowStyle: 'width:100%;display:flex;gap:12px;align-items:flex-start;padding:14px 0;border:none;border-top:1px solid var(--rule);background:transparent;text-align:left;font-family:inherit;color:var(--ink);cursor:pointer;',
+        // Answers stay visible after the fact: the guess the student made, and what
+        // the simulation actually did. Both, because seeing only the right answer
+        // teaches nothing about the wrong one.
+        pilihanmu: rec ? (ARAH.filter(a => a[0] === rec.v)[0] || ['', '—'])[1] : '',
+        jawaban: benar ? (ARAH.filter(a => a[0] === benar)[0] || ['', '—'])[1] : '',
+        fb: rec ? (rec.fb || (rec.reveal || {}).fb || '') : '',
+        opts: ARAH.map(([k, label]) => ({
+          label, active: st.misiPilih === k,
+          onClick: () => this.setState({ misiPilih: k }),
+          style: 'flex:1;min-height:48px;border-radius:var(--r-m);cursor:pointer;font:600 15px/1 var(--font-outfit),sans-serif;'
+            + (st.misiPilih === k
+              ? 'border:1px solid transparent;background:var(--gold);color:var(--panel)'
+              : 'border:1px solid var(--panel-rule);background:transparent;color:var(--panel-ink-2)'),
+        })),
+        sending: !!(labBank && st.sending[labBank.id + ':' + i]),
+        kirim: () => {
+          if (!labBank) return;
+          if (!st.misiPilih) { this.toast('Pilih dugaanmu dulu'); return; }
+          submit(labBank, i, it, st.misiPilih);
+        },
+      };
+    });
+    const misiSim = misiCards.filter(m => m.sim === st.labTab);
+    const misiSelesai = misiCards.filter(m => m.done).length;
+
+    const kunci = (key, s) => (terkunci === key
+      ? Object.assign({}, s, { locked: true, hint: 'Terkunci sampai kamu mengirim dugaanmu.' })
+      : s);
 
     const sliders = [
       { label: 'Amplitudo · kuat pukulan', value: Math.round(st.amp * 100) + '%', min: 5, max: 100, step: 1, raw: Math.round(st.amp * 100), hint: 'Makin besar amplitudo → bunyi makin keras (taraf intensitas naik).', onInput: e => this.setState({ amp: e.target.value / 100 }) },
       { label: 'Frekuensi dasar', value: Math.round(st.freq) + ' Hz', min: 60, max: 900, step: 5, raw: st.freq, hint: 'Makin tinggi frekuensi → nada makin tinggi (melengking).', onInput: e => this.setState({ freq: +e.target.value }) },
       { label: 'Ketegangan membran', value: st.tension < 0.34 ? 'Kendur' : st.tension > 0.66 ? 'Kencang' : 'Sedang', valueText: (st.tension < 0.34 ? 'Kendur' : st.tension > 0.66 ? 'Kencang' : 'Sedang'), min: 0, max: 100, step: 1, raw: Math.round(st.tension * 100), hint: 'Membran lebih kencang → getaran lebih cepat → nada lebih tinggi.', onInput: e => this.setState({ tension: e.target.value / 100 }) }
-    ];
+    ].map((s, i) => kunci(['amp', 'freq', 'tension'][i], s));
 
     const drumOpts = [['mame', 'Gendang Mame · besar'], ['nine', 'Gendang Nine · kecil']].map(([k, label]) => ({
-      label, active: st.drum === k, onClick: () => this.setState({ drum: k }),
+      label, active: st.drum === k, disabled: terkunci === 'drum',
+      onClick: () => { if (terkunci !== 'drum') this.setState({ drum: k }); },
       style: 'flex:1;min-height:48px;border-radius:var(--r-m);cursor:pointer;font:600 13px/1.3 var(--font-outfit),sans-serif;padding:6px 8px;'
         + (st.drum === k ? 'border:1px solid transparent;background:var(--gold);color:var(--panel)' : 'border:1px solid var(--panel-rule);background:transparent;color:var(--panel-ink-2)')
     }));
     const mediumOpts = [['udara', 'Udara'], ['air', 'Air'], ['padat', 'Zat padat']].map(([k, label]) => ({
-      label, active: st.medium === k, onClick: () => this.setState({ medium: k }),
+      label, active: st.medium === k, disabled: terkunci === 'medium',
+      onClick: () => { if (terkunci !== 'medium') this.setState({ medium: k }); },
       style: 'flex:1;min-height:46px;border-radius:var(--r-m);cursor:pointer;font:600 15px/1 var(--font-outfit),sans-serif;'
         + (st.medium === k ? 'border:1px solid transparent;background:var(--panel-ink);color:var(--panel)' : 'border:1px solid var(--panel-rule);background:transparent;color:var(--panel-ink-2)')
     }));
@@ -783,7 +918,6 @@ export default class EModul extends React.Component {
     const dbNow = Math.round(st.db * (0.35 + 0.65 * Math.min(1, this.env + 0.001)) || 0);
 
     const letters = LETTERS;
-    const allBanks = st.cms.banks || [];
     const draft = st.draft || {};
     const bankKey = (b, i) => b.id + ':' + i;
     const bankStat = (b) => {
@@ -854,7 +988,7 @@ export default class EModul extends React.Component {
         isPg: it.type === 'pg', isBs: it.type === 'bs', isMulti: it.type === 'multi',
         isIsian: it.type === 'isian', isCocok: it.type === 'cocok', isEsai: it.type === 'esai',
         showFeedback: done,
-        feedback: (ok ? (rec && rec.fb || 'Tepat!') : ('Belum tepat. ' + ((rec && rec.fb) || '').replace(/^\s*(Tepat|Benar)[!.]?\s*/i, ''))),
+        feedback: (ok ? (rec && rec.fb || 'Tepat!') : ('Belum tepat. ' + ((rec && rec.fb) || '').replace(/^(\s*(?:<p[^>]*>)?\s*)(?:Tepat|Benar)[!.]?\s*/i, '$1'))),
         feedbackStyle: 'margin-top:14px;padding:14px;border-radius:var(--r-m);font:400 15px/1.65 var(--font-outfit),sans-serif;text-wrap:pretty;'
           + (ok ? 'background:var(--ok-bg);color:var(--ok)' : 'background:var(--warn-bg);color:var(--warn)'),
         typeChipStyle: 'flex:none;font:600 12px/1 var(--font-outfit),sans-serif;padding:6px 10px;border-radius:var(--r-full);background:var(--paper-2);color:var(--ink-2)',
@@ -1107,7 +1241,7 @@ export default class EModul extends React.Component {
         onManage: () => this.setState({ adminBank: b.id }),
         onDelete: () => {
           const n = (b.items || []).length;
-          if (!window.confirm('Hapus bank soal "' + b.title + '"?\n\n' + n + ' soal di dalamnya ikut terhapus dan tidak bisa dikembalikan. Nilai yang sudah diperoleh siswa tetap tersimpan.')) return;
+          if (!window.confirm('Hapus bank soal "' + teks(b.title) + '"?\n\n' + n + ' soal di dalamnya ikut terhapus dan tidak bisa dikembalikan. Nilai yang sudah diperoleh siswa tetap tersimpan.')) return;
           this.cmsMutate(c => c.banks.splice(i, 1), 'Bank soal dihapus');
         },
         cardStyle: 'background:var(--raised);border:1px solid ' + (open ? 'var(--ok-rule)' : 'var(--rule)') + ';border-radius:var(--r-l);padding:18px'
@@ -1205,7 +1339,9 @@ export default class EModul extends React.Component {
     const bobot = Object.assign({}, CMS_DEFAULTS.penilaian, st.cms.penilaian || {});
     const work = st.work || { students: [], subs: [], sheets: [] };
     const gradedBanks = (st.cms.banks || []).map(b => ({
-      id: b.id, title: b.title, kkm: b.kkm || 70,
+      // The gradebook and the CSV are tables, not prose. A teacher can format a bank
+      // title now, and a column header is not a place for it.
+      id: b.id, title: teks(b.title), kkm: b.kkm || 70, jenis: b.jenis || 'kuis',
       // Essays carry their own weight, so they are not part of a bank's own mark.
       auto: (b.items || []).filter(it => it.type !== 'esai'),
     }));
@@ -1213,21 +1349,25 @@ export default class EModul extends React.Component {
     const gbRows = work.students.map(stu => {
       const mine = work.subs.filter(x => x.student_id === stu.id);
       const banksOut = {};
-      let sum = 0, count = 0;
+      let sum = 0, count = 0, labSum = 0, labCount = 0;
       gradedBanks.forEach(b => {
         const forBank = mine.filter(x => x.bank_id === b.id && !x.needs_teacher);
         const v = bankScore(b.auto, forBank);
         banksOut[b.id] = v;
-        if (v != null) { sum += v; count++; }
+        if (v == null) return;
+        // Lab guesses are their own component of the final mark, so they must not be
+        // averaged into the quiz figure as a fourth question bank.
+        if (b.jenis === 'lab') { labSum += v; labCount++; } else { sum += v; count++; }
       });
       const sheets = work.sheets.filter(x => x.student_id === stu.id && x.teacher_score != null);
       const lkpdV = sheets.length ? sheets.reduce((a, x) => a + Number(x.teacher_score), 0) / sheets.length : null;
       const esaiV = essayScore(mine);
       const kuisV = count ? sum / count : null;
+      const labV = labCount ? labSum / labCount : null;
       return {
         id: stu.id, nama: stu.nama, kelas: stu.kelas, absen: stu.absen,
-        banks: banksOut, lkpd: lkpdV, esai: esaiV, kkmModul: bobot.kkmModul || 75,
-        akhir: finalScore({ kuis: kuisV, lkpd: lkpdV, esai: esaiV }, bobot),
+        banks: banksOut, lkpd: lkpdV, esai: esaiV, lab: labV, kkmModul: bobot.kkmModul || 75,
+        akhir: finalScore({ kuis: kuisV, lkpd: lkpdV, esai: esaiV, lab: labV }, bobot),
       };
     });
 
@@ -1415,7 +1555,7 @@ export default class EModul extends React.Component {
       ansSliders: [
         { label: 'Gendang Mame (f\u2081)', value: st.ansMame + ' Hz', min: 120, max: 200, step: 1, raw: st.ansMame, onInput: e => this.setState({ ansMame: +e.target.value }) },
         { label: 'Gendang Nine (f\u2082)', value: st.ansNine + ' Hz', min: 120, max: 200, step: 1, raw: st.ansNine, onInput: e => this.setState({ ansNine: +e.target.value }) }
-      ],
+      ].map((sl, i) => kunci(['ansMame', 'ansNine'][i], sl)),
       ansBeat: Math.abs(st.ansNine - st.ansMame),
       ansBeatLabel: Math.abs(st.ansNine - st.ansMame) === 0
         ? 'Kedua gendang sefrekuensi \u2014 tidak ada pelayangan'
@@ -1443,11 +1583,22 @@ export default class EModul extends React.Component {
       drumCenterStyle: 'width:' + (46 + st.amp * 26) + '%;height:' + (46 + st.amp * 26) + '%;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(28,24,64,.16),rgba(28,24,64,.05));display:flex;align-items:center;justify-content:center;transition:all .15s ease',
       ringStyle: 'position:absolute;width:' + drumSize + 'px;height:' + drumSize + 'px;border-radius:50%;border:3px solid var(--gold);opacity:' + (this.env * 0.5).toFixed(2) + ';transform:scale(' + (1 + (1 - this.env) * 0.5).toFixed(2) + ');pointer-events:none',
       mediumInfo: 'Cepat rambat ≈ ' + SPEED[st.medium] + ' m/s. ' + (st.medium === 'udara' ? 'Bunyi paling akrab kita dengar di udara.' : st.medium === 'air' ? 'Di air bunyi merambat lebih cepat, tapi warnanya terdengar lebih redup.' : 'Di zat padat bunyi paling cepat merambat karena partikelnya paling rapat.'),
-      temuan: ['Slider amplitudo mengubah kuat-lemah bunyi, bukan tinggi-rendahnya.',
-        'Slider frekuensi dan ketegangan membran mengubah tinggi-rendah nada.',
-        'Gendang Mame yang lebih besar menghasilkan nada lebih rendah daripada Gendang Nine.'],
-      labDoneLabel: st.done['lab'] ? 'Temuan tersimpan ✓' : 'Catat temuan (+20 XP)',
-      selesaiLab: () => this.award('lab', 20, 'Temuan lab tercatat!'),
+      // The findings used to be printed here in full, which left a student nothing
+      // to find. Each line is now the discussion note of the mission that proves it,
+      // and stays hidden until that mission has been answered.
+      temuan: misiCards.map(m => ({
+        open: m.done,
+        text: m.done ? m.fb : 'Terkunci sampai dugaan ' + m.n + ' kamu kirim.',
+        style: 'display:flex;gap:14px;align-items:flex-start;font:400 16px/1.6 var(--font-outfit),sans-serif;text-wrap:pretty;'
+          + (m.done ? 'color:var(--ink)' : 'color:var(--ink-3)'),
+      })),
+      temuanLabel: misiSelesai + ' dari ' + misiCards.length + ' temuan terbuka',
+
+      misi: misiSim,
+      misiAda: misiCards.length > 0,
+      misiJudul: labBank ? labBank.title : 'Dugaan Lab',
+      misiLabel: misiSim.filter(m => m.done).length + ' dari ' + misiSim.length + ' dugaan di simulasi ini sudah kamu kirim',
+      misiParams,
 
       dopSourceStyle: 'position:absolute;top:18%;left:' + dopLeft + '%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;transition:left .05s linear',
       dopWaveStyle: 'position:absolute;top:18%;left:' + dopLeft + '%;transform:translate(-50%,-6px) scale(' + (st.dopRunning ? 1 : 0.6) + ');width:64px;height:64px;border-radius:50%;border:2px solid rgba(217,150,47,.55);opacity:' + (st.dopRunning ? 0.7 : 0.15) + ';animation:gbRing 1.1s linear infinite;pointer-events:none',
@@ -1466,7 +1617,7 @@ export default class EModul extends React.Component {
         // Capped at 20 m/s (72 km/h). The old ceiling of 60 m/s described a wedding
         // procession moving at 216 km/h.
         { label: 'Kecepatan rombongan (vs)', value: st.dopV + ' m/s', min: 2, max: 20, step: 1, raw: st.dopV, onInput: e => this.setState({ dopV: +e.target.value }) }
-      ],
+      ].map((sl, i) => kunci(['dopF', 'dopV'][i], sl)),
 
       lkpdTabs: ['frekuensi', 'doppler'].map((k, i) => mkTab(st.lkpdTab, k, ['1 · Frekuensi bunyi', '2 · Efek Doppler'][i], (key) => ({ lkpdTab: key }))),
       lkpdTitle: lkpdIsFreq ? 'Frekuensi Bunyi' : 'Efek Doppler',
@@ -1582,7 +1733,10 @@ export default class EModul extends React.Component {
           });
           if (!done) return;
           const v = right / auto.length * 100;
-          rows.push({ label: b.title, value: Math.round(v), kkm: b.kkm || 70, kind: 'kuis' });
+          rows.push({
+            label: b.jenis === 'lab' ? 'Dugaan Lab' : teks(b.title),
+            value: Math.round(v), kkm: b.kkm || 70, kind: b.jenis === 'lab' ? 'lab' : 'kuis',
+          });
         });
         Object.keys(st.sheets || {}).forEach(k => {
           const sh = st.sheets[k];
@@ -1604,7 +1758,7 @@ export default class EModul extends React.Component {
       })(),
       nilaiAkhir: (() => {
         if (st.role !== 'siswa') return null;
-        const kuis = [], lk = [], es = [];
+        const kuis = [], lk = [], es = [], lab = [];
         (st.cms.banks || []).forEach(b => {
           const auto = (b.items || []).filter(it => it.type !== 'esai');
           if (!auto.length) return;
@@ -1613,7 +1767,7 @@ export default class EModul extends React.Component {
             const rec = st.answers[b.id + ':' + (b.items || []).indexOf(it)];
             if (rec) { done++; if (rec.ok) right++; }
           });
-          if (done) kuis.push(right / auto.length * 100);
+          if (done) (b.jenis === 'lab' ? lab : kuis).push(right / auto.length * 100);
         });
         Object.keys(st.sheets || {}).forEach(k => {
           if (st.sheets[k].teacher_score != null) lk.push(Number(st.sheets[k].teacher_score));
@@ -1623,7 +1777,7 @@ export default class EModul extends React.Component {
           if (r && r.needsTeacher && r.teacherScore != null) es.push(Number(r.teacherScore));
         });
         const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
-        const v = finalScore({ kuis: avg(kuis), lkpd: avg(lk), esai: avg(es) }, bobot);
+        const v = finalScore({ kuis: avg(kuis), lkpd: avg(lk), esai: avg(es), lab: avg(lab) }, bobot);
         return v == null ? null : { value: Math.round(v), kkm: bobot.kkmModul };
       })(),
       sertifikatStyle: 'margin-top:32px;padding:32px 20px;text-align:center;border:1px solid ' + (pct >= 70 ? 'var(--gold)' : 'var(--rule)') + ';background:' + (pct >= 70 ? 'var(--raised)' : 'transparent'),
@@ -1723,12 +1877,13 @@ export default class EModul extends React.Component {
       // Penilaian & tahapan
       bobotFields: [
         ['bobotKuis', 'Bobot kuis (%)'], ['bobotLkpd', 'Bobot LKPD (%)'],
-        ['bobotEsai', 'Bobot esai (%)'], ['kkmModul', 'KKM modul'],
+        ['bobotEsai', 'Bobot esai (%)'], ['bobotLab', 'Bobot dugaan lab (%)'],
+        ['kkmModul', 'KKM modul'],
       ].map(([k, label]) => ({
         label, val: String(bobot[k]),
         onChange: e => this.cmsSet('penilaian.' + k, parseInt(e.target.value || '0', 10) || 0),
       })),
-      bobotTotal: (bobot.bobotKuis || 0) + (bobot.bobotLkpd || 0) + (bobot.bobotEsai || 0),
+      bobotTotal: (bobot.bobotKuis || 0) + (bobot.bobotLkpd || 0) + (bobot.bobotEsai || 0) + (bobot.bobotLab || 0),
       langkahRows: [
         ['info', 'Pendahuluan'], ['materi', 'Eksplorasi materi'], ['lab', 'Lab simulasi'],
         ['lkpd', 'LKPD'], ['kuis', 'Kuis'], ['rangkuman', 'Refleksi'],

@@ -1,4 +1,5 @@
 import React from 'react';
+import RichText from './RichText';
 
 // One editor for every section of the module.
 //
@@ -23,12 +24,12 @@ const LABELS = {
 };
 const label = (k) => LABELS[k] || (k.charAt(0).toUpperCase() + k.slice(1));
 
-// Long prose gets room to breathe; a tag or a symbol does not need a paragraph box.
-const Text = ({ onChange, value }) => {
+// Long prose gets the full editor; a tag, a symbol or a formula gets the inline one.
+// Formulas are why the inline editor still carries superscript and subscript: this
+// is where v = λ·f and f₁ are actually typed.
+const Text = ({ name, onChange, value }) => {
   const long = String(value ?? '').length > 90;
-  return long
-    ? <textarea value={value ?? ''} rows={Math.min(10, Math.ceil(String(value).length / 70) + 1)} onChange={(e) => onChange(e.target.value)} />
-    : <input value={value ?? ''} onChange={(e) => onChange(e.target.value)} />;
+  return <RichText simple={!long} value={value ?? ''} onChange={onChange} label={name} minHeight={long ? '130px' : undefined} />;
 };
 
 function Node({ name, onChange, value }) {
@@ -36,7 +37,7 @@ function Node({ name, onChange, value }) {
     return (
       <label className="gb-field">
         <span>{label(name)}</span>
-        <Text value={value} onChange={onChange} />
+        <Text name={label(name)} value={value} onChange={onChange} />
       </label>
     );
   }

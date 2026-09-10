@@ -1,5 +1,6 @@
 import React from 'react';
 import { sx } from './sx';
+import Rich from './Rich';
 
 export default function Rangkuman({ v }) {
   const { lkpdH, lkpdV, rangkuman, refleksiBtnLabel, refleksiSkala, selesaiRefleksi } = v;
@@ -11,7 +12,7 @@ export default function Rangkuman({ v }) {
           {(rangkuman || []).map((r, rI) => (
             <div key={rI} style={sx("display:flex;gap:16px;align-items:flex-start;padding:16px 0;border-top:1px solid var(--rule)")}>
               <span style={sx("flex:none;width:24px;font:500 15px/1.7 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{r.n}</span>
-              <span style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")}>{r.text}</span>
+              <Rich tag="span" html={r.text} style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")} />
             </div>
           ))}
         </div>

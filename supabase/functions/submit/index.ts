@@ -8,6 +8,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { grade, validate, TYPE_XP, type Item } from '../_shared/grading.ts';
+import { siapkan, type Misi, type Siap } from '../_shared/physics.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -66,13 +67,30 @@ Deno.serve(async (req) => {
     const invalid = validate(item, answer);
     if (invalid) return json({ error: invalid }, 400);
 
-    const g = grade(item, answer);
+    // Dugaan lab tidak punya kunci. Kondisi simulasi yang dilihat siswa dibangun
+    // ulang di sini dari id siswa, bukan diambil dari badan permintaan — peramban
+    // yang boleh memilih kondisinya sendiri akan memilih yang jawabannya ia tahu.
+    let siap: Siap | undefined;
+    if (item.type === 'dugaan') {
+      siap = siapkan(item as unknown as Misi, student.id + '|' + bankId + '|' + itemIndex);
+    }
+
+    const g = grade(item, answer, siap);
 
     // Dibuka setelah jawaban terkunci, bukan sebelumnya.
     const reveal: Record<string, unknown> = {};
     if (item.key !== undefined) reveal.key = item.key;
     if (item.keys) reveal.keys = item.keys;
     if (item.accept?.length) reveal.accept = item.accept[0];
+    // Pembahasan ikut disimpan, bukan hanya dikirim sekali. Tanpa ini ia hilang
+    // begitu siswa memuat ulang halaman, padahal untuk misi lab pembahasan itulah
+    // hadiahnya — dan untuk kuis biasa ia satu-satunya umpan balik yang ada.
+    if (item.fb) reveal.fb = item.fb;
+    if (siap) {
+      reveal.params = siap.params as unknown as Record<string, unknown>;
+      reveal.arah = siap.benar;
+      reveal.ubah = siap.arah;
+    }
 
     // Menjawab benar memberi XP penuh; menjawab dan meleset tetap memberi sedikit,
     // karena mencoba lalu membaca pembahasan adalah perilaku yang ingin didorong.

@@ -1,5 +1,6 @@
 import React from 'react';
 import { sx } from './sx';
+import Rich from './Rich';
 
 const SEC = "margin-top:36px;padding-top:28px;border-top:1px solid var(--rule)";
 const H2 = "font-family:var(--font-instrument),serif;font-size:28px;line-height:1.1;margin:0 0 16px;font-weight:400;text-wrap:balance";
@@ -55,7 +56,7 @@ export default function Info({ v }) {
             {(identRows || []).map((r, rI) => (
               <React.Fragment key={rI}>
                 <dt style={sx("padding:14px 0;border-top:1px solid var(--rule);font:400 15px/1.5 var(--font-outfit),sans-serif;color:var(--ink-2)")}>{r.label}</dt>
-                <dd style={sx("margin:0;padding:14px 0;border-top:1px solid var(--rule);font:500 15px/1.5 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")}>{r.val}</dd>
+                <Rich tag="dd" html={r.val} style={sx("margin:0;padding:14px 0;border-top:1px solid var(--rule);font:500 15px/1.5 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")} />
               </React.Fragment>
             ))}
           </dl>
@@ -71,7 +72,7 @@ export default function Info({ v }) {
               {(tujuan || []).map((t, tI) => (
                 <li key={tI} style={sx("display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--rule)")}>
                   <span style={sx("flex:none;width:22px;font:500 15px/1.7 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{t.n}</span>
-                  <span style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")}>{t.text}</span>
+                  <Rich tag="span" html={t.text} style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")} />
                 </li>
               ))}
             </ol>

@@ -14,6 +14,22 @@ assert.ok(!numEq('50', '150'));
 assert.equal(norm('  Ultrasonik.  '), 'ultrasonik');
 assert.equal(norm('2 × 10³'), '2 x 103');
 
+// Answer keys are written in the rich editor now, so markup has to fall away before
+// anything is compared. A key typed as W/m<sup>2</sup> and a student typing W/m²
+// must not be told they disagree.
+assert.equal(norm('W/m<sup>2</sup>'), 'w/m2');
+assert.ok(numEq('0,2 W/m<sup>2</sup>', '0.2'));
+assert.ok(numEq('5 x 10<sup>-3</sup>', '0,005 sekon'));
+assert.equal(grade({ type: 'isian', accept: ['<p>ultrasonik</p>'] }, 'Ultrasonik').ok, true);
+assert.equal(grade({ type: 'isian', accept: ['<b>350</b> m/s'] }, '350').ok, true);
+// Block tags become a space, so two sentences never weld into one word.
+assert.equal(norm('<p>bunyi</p><p>merambat</p>'), 'bunyi merambat');
+// Entities decode rather than surviving as literal ampersand-a-m-p.
+assert.equal(norm('Mame &amp; Nine'), 'mame & nine');
+// Essay keyword hits are counted after the same stripping.
+assert.equal(grade({ type: 'esai', keywords: ['<em>frekuensi</em>'] },
+  'Frekuensi naik karena membran dikencangkan lalu bergetar lebih cepat.').hit, 1);
+
 // ── Per-type grading ─────────────────────────────────────────────────────────
 assert.deepEqual(grade({ type: 'pg', key: 1 }, 1), { ok: true, ratio: 1 });
 assert.deepEqual(grade({ type: 'pg', key: 1 }, 0), { ok: false, ratio: 0 });

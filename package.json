@@ -8,10 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "content": "node scripts/build-content.mjs",
-    "test": "NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON node app/components/sx.test.mjs && NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON node app/components/grading.test.mjs && NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON node app/lib/progress.test.mjs"
+    "test": "NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON node app/components/sx.test.mjs && NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON node app/components/grading.test.mjs && NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON node app/components/physics.test.mjs && NODE_OPTIONS=--disable-warning=MODULE_TYPELESS_PACKAGE_JSON node app/lib/progress.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
+    "@tiptap/extension-highlight": "^3.31.3",
+    "@tiptap/extension-subscript": "^3.31.3",
+    "@tiptap/extension-superscript": "^3.31.3",
+    "@tiptap/extension-text-align": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
+    "dompurify": "^3.4.15",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"

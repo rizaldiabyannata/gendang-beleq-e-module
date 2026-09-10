@@ -110,6 +110,7 @@ export function finalScore(parts, bobot) {
     [parts.kuis, bobot.bobotKuis],
     [parts.lkpd, bobot.bobotLkpd],
     [parts.esai, bobot.bobotEsai],
+    [parts.lab, bobot.bobotLab],
   ].filter(([v, b]) => v != null && b > 0);
   if (!w.length) return null;
   const total = w.reduce((a, [, b]) => a + b, 0);

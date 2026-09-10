@@ -1,5 +1,6 @@
 import React from 'react';
 import { sx } from './sx';
+import Rich from './Rich';
 
 const SEC = "margin-top:36px;padding-top:28px;border-top:1px solid var(--rule)";
 const H2 = "font-family:var(--font-instrument),serif;font-size:28px;line-height:1.1;margin:0 0 16px;font-weight:400;text-wrap:balance";
@@ -15,12 +16,12 @@ const LABEL = "margin:0 0 10px;font:600 13px/1 var(--font-jetbrains),ui-monospac
 function Pemantik({ items, title }) {
   return (
     <section style={sx(SEC)}>
-      <h3 style={sx(H3)}>{title}</h3>
+      <Rich tag="h3" html={title} style={sx(H3)} />
       <ol style={sx("margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px")}>
         {(items || []).map((q, qI) => (
           <li key={qI} style={sx("display:flex;gap:16px;align-items:flex-start")}>
             <span style={sx("flex:none;width:22px;font:500 15px/1.7 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{qI + 1}</span>
-            <span style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")}>{q}</span>
+            <Rich tag="span" html={q} style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")} />
           </li>
         ))}
       </ol>
@@ -44,28 +45,28 @@ export default function Materi({ v }) {
 
       {matPendahuluan ? (
         <>
-          <h2 style={sx(H2)}>{matPendJudul}</h2>
-          <p style={sx(BODY)}>{matPendTeks}</p>
+          <Rich tag="h2" html={matPendJudul} style={sx(H2)} />
+          <Rich block tag="div" html={matPendTeks} style={sx(BODY)} />
           <section style={sx(SEC)}>
             <h3 style={sx(LABEL)}>Pertanyaan pemantik</h3>
-            <p style={sx("margin:0;max-width:62ch;font:400 18px/1.6 var(--font-instrument),serif;color:var(--ink);text-wrap:pretty")}>{matPendPemantik}</p>
+            <Rich block tag="div" html={matPendPemantik} style={sx("margin:0;max-width:62ch;font:400 18px/1.6 var(--font-instrument),serif;color:var(--ink);text-wrap:pretty")} />
           </section>
         </>
       ) : null}
 
       {matKesenian ? (
         <>
-          <h2 style={sx(H2)}>{matKesJudul}</h2>
-          <p style={sx(BODY)}>{matKesP1}</p>
-          <p style={sx(BODY)}>{matKesP2}</p>
+          <Rich tag="h2" html={matKesJudul} style={sx(H2)} />
+          <Rich block tag="div" html={matKesP1} style={sx(BODY)} />
+          <Rich block tag="div" html={matKesP2} style={sx(BODY)} />
           <section style={sx(SEC)}>
             <h3 style={sx(H3)}>Instrumen dalam ansambel</h3>
             <div style={sx("display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px")}>
               {(instrumen || []).map((i, iI) => (
-                <span key={iI} style={sx("background:var(--paper-2);border-radius:var(--r-full);padding:9px 14px;font:500 15px/1 var(--font-outfit),sans-serif;color:var(--ink)")}>{i}</span>
+                <Rich tag="span" html={i} key={iI} style={sx("background:var(--paper-2);border-radius:var(--r-full);padding:9px 14px;font:500 15px/1 var(--font-outfit),sans-serif;color:var(--ink)")} />
               ))}
             </div>
-            <div style={sx(NOTE)}>{matKesCatatan}</div>
+            <Rich block tag="div" html={matKesCatatan} style={sx(NOTE)} />
           </section>
         </>
       ) : null}
@@ -77,11 +78,11 @@ export default function Materi({ v }) {
           {(komponen || []).map((k, kI) => (
             <div key={kI} style={sx("padding:20px 0;border-top:1px solid var(--rule)")}>
               <div style={sx("display:flex;align-items:baseline;gap:14px;margin-bottom:8px")}>
-                <span style={sx("flex:none;width:22px;font:500 17px/1.3 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{k.tag}</span>
-                <span style={sx("font:600 18px/1.3 var(--font-outfit),sans-serif")}>{k.title}</span>
+                <Rich tag="span" html={k.tag} style={sx("flex:none;width:22px;font:500 17px/1.3 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")} />
+                <Rich tag="span" html={k.title} style={sx("font:600 18px/1.3 var(--font-outfit),sans-serif")} />
               </div>
-              <p style={sx("margin:0 0 8px 36px;max-width:62ch;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink-2);text-wrap:pretty")}>{k.body}</p>
-              <div style={sx("margin-left:36px;font:500 15px/1.5 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{k.rumus}</div>
+              <Rich block tag="div" html={k.body} style={sx("margin:0 0 8px 36px;max-width:62ch;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink-2);text-wrap:pretty")} />
+              <Rich tag="div" html={k.rumus} style={sx("margin-left:36px;font:500 15px/1.5 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")} />
             </div>
           ))}
 
@@ -91,10 +92,10 @@ export default function Materi({ v }) {
               {(klasifikasi || []).map((c, cI) => (
                 <div key={cI} style={sx(c.style)}>
                   <div style={sx("display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px")}>
-                    <span style={sx("font:600 17px/1.2 var(--font-outfit),sans-serif")}>{c.name}</span>
-                    <span style={sx("font:500 15px/1 var(--font-jetbrains),ui-monospace,monospace")}>{c.range}</span>
+                    <Rich tag="span" html={c.name} style={sx("font:600 17px/1.2 var(--font-outfit),sans-serif")} />
+                    <Rich tag="span" html={c.range} style={sx("font:500 15px/1 var(--font-jetbrains),ui-monospace,monospace")} />
                   </div>
-                  <p style={sx("margin:0;max-width:62ch;font:400 15px/1.65 var(--font-outfit),sans-serif;opacity:.86;text-wrap:pretty")}>{c.body}</p>
+                  <Rich block tag="div" html={c.body} style={sx("margin:0;max-width:62ch;font:400 15px/1.65 var(--font-outfit),sans-serif;opacity:.86;text-wrap:pretty")} />
                 </div>
               ))}
             </div>
@@ -110,8 +111,8 @@ export default function Materi({ v }) {
               <div style={sx("display:flex;flex-direction:column;gap:14px")}>
                 {(langkahSolusi || []).map((s, sI) => (
                   <div key={sI}>
-                    <div style={sx(LABEL + ";margin-bottom:6px")}>{s.step}</div>
-                    <div style={sx("font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink)")}>{s.text}</div>
+                    <Rich tag="div" html={s.step} style={sx(LABEL + ";margin-bottom:6px")} />
+                    <Rich block tag="div" html={s.text} style={sx("font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink)")} />
                   </div>
                 ))}
               </div>
@@ -126,9 +127,9 @@ export default function Materi({ v }) {
           <p style={sx(BODY)}>Bunyi merambat sebagai pola rapatan dan renggangan partikel medium. Karena itu bunyi tidak dapat merambat di ruang hampa — tidak ada partikel yang bisa digetarkan.</p>
           {(sifat || []).map((s, sI) => (
             <div key={sI} style={sx("padding:20px 0;border-top:1px solid var(--rule)")}>
-              <h3 style={sx("font:600 18px/1.3 var(--font-outfit),sans-serif;margin:0 0 8px")}>{s.title}</h3>
-              <p style={sx(SOFT)}>{s.body}</p>
-              <div style={sx(NOTE)}><strong style={sx("font-weight:600")}>Di gendang beleq: </strong>{s.local}</div>
+              <Rich tag="h3" html={s.title} style={sx("font:600 18px/1.3 var(--font-outfit),sans-serif;margin:0 0 8px")} />
+              <Rich block tag="div" html={s.body} style={sx(SOFT)} />
+              <div style={sx(NOTE)}><strong style={sx("font-weight:600")}>Di gendang beleq: </strong><Rich tag="span" html={s.local} /></div>
             </div>
           ))}
 
@@ -138,18 +139,18 @@ export default function Materi({ v }) {
               {(syarat || []).map((s, sI) => (
                 <li key={sI} style={sx("display:flex;gap:16px;align-items:flex-start")}>
                   <span style={sx("flex:none;width:22px;font:500 15px/1.7 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{s.n}</span>
-                  <span style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink)")}>{s.text}</span>
+                  <Rich tag="span" html={s.text} style={sx("flex:1;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink)")} />
                 </li>
               ))}
             </ol>
           </section>
 
           <section style={sx(SEC)}>
-            <h3 style={sx(H3)}>{pelayangan.judul}</h3>
-            <div style={sx(FORMULA + ";text-align:center;font-family:var(--font-instrument),serif;font-size:26px;color:var(--ink)")}>{pelayangan.rumus}</div>
-            <p style={sx(BODY)}>{pelayangan.teks}</p>
-            <p style={sx(BODY)}>{pelayangan.contoh}</p>
-            <div style={sx(NOTE)}><strong style={sx("font-weight:600")}>Di gendang beleq: </strong>{pelayangan.local}</div>
+            <Rich tag="h3" html={pelayangan.judul} style={sx(H3)} />
+            <Rich tag="div" html={pelayangan.rumus} style={sx(FORMULA + ";text-align:center;font-family:var(--font-instrument),serif;font-size:26px;color:var(--ink)")} />
+            <Rich block tag="div" html={pelayangan.teks} style={sx(BODY)} />
+            <Rich block tag="div" html={pelayangan.contoh} style={sx(BODY)} />
+            <div style={sx(NOTE)}><strong style={sx("font-weight:600")}>Di gendang beleq: </strong><Rich tag="span" html={pelayangan.local} /></div>
           </section>
         </>
       ) : null}
@@ -160,10 +161,10 @@ export default function Materi({ v }) {
           <p style={sx(BODY)}>Kalau hanya membran kulit yang bergetar tanpa tabung berongga, suaranya sangat pelan. Rongga kayu di badan gendang bertindak sebagai ruang resonansi akustik: udara di dalamnya ikut bergetar harmonis saat kulit dipukul, lalu memperkuat bunyi asli.</p>
           {(resonansiSteps || []).map((r, rI) => (
             <div key={rI} style={sx("display:flex;gap:16px;padding:20px 0;border-top:1px solid var(--rule)")}>
-              <span style={sx("flex:none;width:22px;font:500 15px/1.6 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{r.tag}</span>
+              <Rich tag="span" html={r.tag} style={sx("flex:none;width:22px;font:500 15px/1.6 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")} />
               <span style={sx("flex:1")}>
-                <span style={sx("display:block;font:600 17px/1.3 var(--font-outfit),sans-serif;margin-bottom:6px")}>{r.title}</span>
-                <span style={sx("display:block;max-width:62ch;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink-2);text-wrap:pretty")}>{r.body}</span>
+                <Rich tag="span" html={r.title} style={sx("display:block;font:600 17px/1.3 var(--font-outfit),sans-serif;margin-bottom:6px")} />
+                <Rich tag="span" html={r.body} style={sx("display:block;max-width:62ch;font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink-2);text-wrap:pretty")} />
               </span>
             </div>
           ))}
@@ -190,31 +191,31 @@ export default function Materi({ v }) {
                 <tbody>
                   {(mameNina || []).map((m, mI) => (
                     <tr key={mI}>
-                      <th scope="row" style={sx("text-align:left;padding:14px 10px 14px 0;border-bottom:1px solid var(--rule);font:400 15px/1.5 var(--font-outfit),sans-serif;color:var(--ink-2)")}>{m.aspek}</th>
-                      <td style={sx("padding:14px 10px;border-bottom:1px solid var(--rule);font-weight:500")}>{m.mame}</td>
-                      <td style={sx("padding:14px 0 14px 10px;border-bottom:1px solid var(--rule);font-weight:500;color:var(--gold-ink)")}>{m.nine}</td>
+                      <Rich tag="th" html={m.aspek} scope="row" style={sx("text-align:left;padding:14px 10px 14px 0;border-bottom:1px solid var(--rule);font:400 15px/1.5 var(--font-outfit),sans-serif;color:var(--ink-2)")} />
+                      <Rich tag="td" html={m.mame} style={sx("padding:14px 10px;border-bottom:1px solid var(--rule);font-weight:500")} />
+                      <Rich tag="td" html={m.nine} style={sx("padding:14px 0 14px 10px;border-bottom:1px solid var(--rule);font-weight:500;color:var(--gold-ink)")} />
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div style={sx(NOTE + ";margin-top:24px")}><strong style={sx("font-weight:600")}>Tahukah kamu. </strong>{tahukahResonansi}</div>
-            <div style={sx(NOTE + ";margin-top:12px")}><strong style={sx("font-weight:600")}>Tahukah kamu. </strong>{tahukahKulit}</div>
+            <div style={sx(NOTE + ";margin-top:24px")}><strong style={sx("font-weight:600")}>Tahukah kamu. </strong><Rich tag="span" html={tahukahResonansi} /></div>
+            <div style={sx(NOTE + ";margin-top:12px")}><strong style={sx("font-weight:600")}>Tahukah kamu. </strong><Rich tag="span" html={tahukahKulit} /></div>
           </section>
 
           <section style={sx(SEC)}>
-            <h3 style={sx(H3)}>{mersenne.judul}</h3>
-            <div style={sx(FORMULA + ";text-align:center;font-family:var(--font-instrument),serif;font-size:28px;color:var(--ink)")}>{mersenne.rumus}</div>
+            <Rich tag="h3" html={mersenne.judul} style={sx(H3)} />
+            <Rich tag="div" html={mersenne.rumus} style={sx(FORMULA + ";text-align:center;font-family:var(--font-instrument),serif;font-size:28px;color:var(--ink)")} />
             <dl style={sx("margin:0 0 20px;display:flex;flex-direction:column;gap:10px")}>
               {(mersenne.vars || []).map((x, xI) => (
                 <div key={xI} style={sx("display:flex;gap:14px;align-items:baseline")}>
-                  <dt style={sx("flex:none;width:28px;font-family:var(--font-instrument),serif;font-size:18px;color:var(--gold-ink)")}>{x.sym}</dt>
-                  <dd style={sx("flex:1;margin:0;font:400 15px/1.65 var(--font-outfit),sans-serif;color:var(--ink-2);text-wrap:pretty")}>{x.def}</dd>
+                  <Rich tag="dt" html={x.sym} style={sx("flex:none;width:28px;font-family:var(--font-instrument),serif;font-size:18px;color:var(--gold-ink)")} />
+                  <Rich tag="dd" html={x.def} style={sx("flex:1;margin:0;font:400 15px/1.65 var(--font-outfit),sans-serif;color:var(--ink-2);text-wrap:pretty")} />
                 </div>
               ))}
             </dl>
-            <p style={sx(BODY)}>{mersenne.teks}</p>
-            <div style={sx(NOTE)}><strong style={sx("font-weight:600")}>Uji sendiri. </strong>{mersenne.cek}</div>
+            <Rich block tag="div" html={mersenne.teks} style={sx(BODY)} />
+            <div style={sx(NOTE)}><strong style={sx("font-weight:600")}>Uji sendiri. </strong><Rich tag="span" html={mersenne.cek} /></div>
           </section>
 
           <section style={sx(SEC)}>
@@ -227,10 +228,10 @@ export default function Materi({ v }) {
             {(mediumRows || []).map((m, mI) => (
               <div key={mI} style={sx("padding:16px 0;border-top:1px solid var(--rule)")}>
                 <div style={sx("display:flex;align-items:baseline;gap:14px")}>
-                  <span style={sx("flex:1;font:600 16px/1.3 var(--font-outfit),sans-serif")}>{m.medium}</span>
-                  <span style={sx("flex:none;font:500 16px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{m.v}</span>
+                  <Rich tag="span" html={m.medium} style={sx("flex:1;font:600 16px/1.3 var(--font-outfit),sans-serif")} />
+                  <Rich tag="span" html={m.v} style={sx("flex:none;font:500 16px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")} />
                 </div>
-                <div style={sx("font:400 15px/1.6 var(--font-outfit),sans-serif;color:var(--ink-2);margin-top:6px")}>{m.note}</div>
+                <Rich tag="div" html={m.note} style={sx("font:400 15px/1.6 var(--font-outfit),sans-serif;color:var(--ink-2);margin-top:6px")} />
               </div>
             ))}
           </section>
@@ -252,8 +253,8 @@ export default function Materi({ v }) {
             <dl style={sx("margin:0;display:flex;flex-direction:column;gap:8px")}>
               {(dopplerVars || []).map((d, dI) => (
                 <div key={dI} style={sx("display:flex;gap:12px;font:400 15px/1.6 var(--font-outfit),sans-serif")}>
-                  <dt style={sx("flex:none;width:36px;font-family:var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")}>{d.sym}</dt>
-                  <dd style={sx("flex:1;margin:0;color:var(--ink-2)")}>{d.def}</dd>
+                  <Rich tag="dt" html={d.sym} style={sx("flex:none;width:36px;font-family:var(--font-jetbrains),ui-monospace,monospace;color:var(--gold-ink)")} />
+                  <Rich tag="dd" html={d.def} style={sx("flex:1;margin:0;color:var(--ink-2)")} />
                 </div>
               ))}
             </dl>
@@ -284,14 +285,14 @@ export default function Materi({ v }) {
           <p style={sx(SOFT)}>Ketuk istilah untuk melihat definisinya.</p>
           <div style={sx("display:flex;flex-wrap:wrap;gap:9px")}>
             {(glosarium || []).map((g, gI) => (
-              <button key={gI} onClick={g.onClick} style={sx("min-height:44px;padding:0 16px;border:1px solid var(--rule-2);border-radius:var(--r-full);background:transparent;color:var(--ink);font:500 15px/1 var(--font-outfit),sans-serif;cursor:pointer")}>{g.term}</button>
+              <button key={gI} onClick={g.onClick} style={sx("min-height:44px;padding:0 16px;border:1px solid var(--rule-2);border-radius:var(--r-full);background:transparent;color:var(--ink);font:500 15px/1 var(--font-outfit),sans-serif;cursor:pointer")}><Rich tag="span" html={g.term} /></button>
             ))}
           </div>
           <section style={sx(SEC)}>
             <h3 style={sx(H3)}>Daftar pustaka</h3>
             <div style={sx("display:flex;flex-direction:column;gap:14px")}>
               {(pustaka || []).map((p, pI) => (
-                <div key={pI} style={sx("font:400 15px/1.65 var(--font-outfit),sans-serif;color:var(--ink-2);padding-left:18px;text-indent:-18px;text-wrap:pretty")}>{p}</div>
+                <Rich tag="div" html={p} key={pI} style={sx("font:400 15px/1.65 var(--font-outfit),sans-serif;color:var(--ink-2);padding-left:18px;text-indent:-18px;text-wrap:pretty")} />
               ))}
             </div>
           </section>

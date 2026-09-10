@@ -69,9 +69,7 @@ export default function Gradebook({ banks, classes, classId, loading, onClass, o
                 <th className="gb-sticky">Nama</th>
                 <th className="gb-num">Absen</th>
                 {banks.map((b) => (
-                  <th key={b.id} className="gb-num" title={b.title}>
-                    {b.title.length > 22 ? b.title.slice(0, 20) + '…' : b.title}
-                  </th>
+                  <th key={b.id} className="gb-num gb-wrap" title={b.title}>{b.title}</th>
                 ))}
                 <th className="gb-num">LKPD</th>
                 <th className="gb-num">Esai</th>

@@ -237,6 +237,10 @@ textarea{resize:vertical}
 .gb-table thead .gb-sticky{z-index:3;background:var(--paper-2)}
 .gb-table tbody tr:hover .gb-sticky{background:color-mix(in srgb,var(--gold) 7%,var(--raised))}
 .gb-num{text-align:right;font-family:var(--font-jetbrains),ui-monospace,monospace;font-size:14px}
+/* Bank titles used to be chopped at twenty characters, which turned eight columns
+   into eight variations of "LATIHAN SOAL · KONSE…". They wrap instead. */
+.gb-table thead th.gb-wrap{white-space:normal;min-width:112px;max-width:168px;
+  vertical-align:bottom;line-height:1.35}
 .gb-pass{color:var(--ok)}
 .gb-fail{color:var(--warn)}
 .gb-pending{color:var(--ink-3)}
@@ -266,3 +270,131 @@ textarea{resize:vertical}
   border:1.5px solid var(--rule-2);border-radius:var(--r-m);background:transparent;
   color:var(--ink-2);font:600 15px/1 var(--font-jetbrains),ui-monospace,monospace}
 .gb-scores button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#16132e}
+
+/* ── Rich text ────────────────────────────────────────────────────────────────
+   The teacher's writing surface, and the same words on their way to a student.
+
+   The toolbar buttons sit at 34px rather than the 44px the rest of the module
+   uses for touch. This is a desk tool on a teacher's own machine, a dozen buttons
+   in one row, and 34px still clears the 24px minimum target size. Everything a
+   student ever taps stays at 44. */
+.gb-rte{border:1.5px solid var(--rule-2);border-radius:var(--r-m);background:var(--paper);
+  position:relative;overflow:hidden}
+.gb-rte:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+
+.gb-rte-bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:6px;
+  border-bottom:1px solid var(--rule);background:var(--paper-2)}
+.gb-rte-btn{display:inline-flex;align-items:center;justify-content:center;
+  min-width:34px;height:34px;padding:0 7px;border:1px solid transparent;
+  border-radius:var(--r-s);background:transparent;color:var(--ink-2);cursor:pointer;
+  font:600 13px/1 var(--font-outfit),sans-serif}
+.gb-rte-btn:hover{background:var(--gold-soft);color:var(--ink)}
+.gb-rte-btn.is-on{background:var(--gold);color:var(--panel);border-color:var(--gold)}
+.gb-rte-btn sup,.gb-rte-btn sub{font-size:9px}
+.gb-rte-mark{background:var(--gold-soft);padding:0 3px;border-radius:3px}
+.gb-rte-sep{width:1px;height:20px;margin:0 4px;background:var(--rule-2);flex:none}
+.gb-rte-push{margin-left:auto;background:transparent}
+
+.gb-rte-body{padding:12px;min-height:var(--gb-rte-min,120px);outline:none;
+  font:400 15px/1.65 var(--font-outfit),sans-serif;color:var(--ink);
+  overflow-wrap:anywhere}
+.gb-rte-body.gb-rte-simple{min-height:0;padding:11px 12px}
+.gb-rte-ph{position:absolute;left:13px;bottom:12px;pointer-events:none;
+  font:400 15px/1.65 var(--font-outfit),sans-serif;color:var(--ink-3)}
+.gb-rte.is-simple .gb-rte-ph{top:auto;bottom:11px}
+
+/* ProseMirror puts its own margins on everything; these are the module's. */
+.gb-rte-body > :first-child{margin-top:0}
+.gb-rte-body > :last-child{margin-bottom:0}
+.gb-rte-body p{margin:0 0 10px}
+.gb-rte-body h2{font-family:var(--font-instrument),serif;font-size:22px;line-height:1.15;
+  font-weight:400;margin:16px 0 8px}
+.gb-rte-body h3{font:600 18px/1.3 var(--font-outfit),sans-serif;margin:14px 0 6px}
+.gb-rte-body ul,.gb-rte-body ol{margin:0 0 10px;padding-left:22px}
+.gb-rte-body li{margin:3px 0}
+.gb-rte-body blockquote{margin:10px 0;padding-left:14px;border-left:3px solid var(--gold);
+  color:var(--ink-2)}
+
+/* Rendered output. Same rules, so what a teacher composes is what a student reads. */
+.gb-rich{overflow-wrap:anywhere}
+.gb-rich :first-child{margin-top:0}
+.gb-rich :last-child{margin-bottom:0}
+.gb-rich-block p{margin:0 0 12px}
+.gb-rich-block h2{font-family:var(--font-instrument),serif;font-size:clamp(20px,3vw,24px);
+  line-height:1.15;font-weight:400;margin:22px 0 10px}
+.gb-rich-block h3{font:600 18px/1.35 var(--font-outfit),sans-serif;margin:18px 0 8px}
+.gb-rich-block ul,.gb-rich-block ol{margin:0 0 12px;padding-left:24px}
+.gb-rich-block li{margin:5px 0}
+.gb-rich-block blockquote{margin:14px 0;padding-left:16px;border-left:3px solid var(--gold);
+  color:var(--ink-2)}
+.gb-rich mark,.gb-rte-body mark{background:var(--gold-soft);color:inherit;
+  padding:0 3px;border-radius:3px}
+.gb-rich code,.gb-rte-body code{font:500 .92em/1.4 var(--font-jetbrains),ui-monospace,monospace;
+  background:var(--gold-soft);padding:1px 5px;border-radius:4px}
+.gb-rich sup,.gb-rich sub,.gb-rte-body sup,.gb-rte-body sub{font-size:.72em;line-height:0}
+
+/* ── Teacher panel layout ─────────────────────────────────────────────────────
+   Eight destinations used to sit in one undifferentiated row of pills. They are
+   grouped by what the teacher is actually doing — writing the module, marking it,
+   running the class — and the bar sticks, because every screen under it is long
+   enough to lose it. */
+/* The page header is sticky at z-40 and about 69px tall, so this parks underneath
+   it rather than at the top of the viewport. .gb-rail next door makes the same
+   assumption with its own 96px. */
+.gb-adm-bar{position:sticky;top:69px;z-index:6;margin:0 -20px 24px;padding:14px 20px;
+  background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rule)}
+@media (min-width:600px){.gb-adm-bar{margin-left:-36px;margin-right:-36px;padding-left:36px;padding-right:36px}}
+@media (min-width:1024px){.gb-adm-bar{margin-left:-56px;margin-right:-56px;padding-left:56px;padding-right:56px}}
+@media (min-width:1440px){.gb-adm-bar{margin-left:-72px;margin-right:-72px;padding-left:72px;padding-right:72px}}
+
+.gb-adm-groups{display:flex;gap:8px 28px;flex-wrap:wrap;align-items:flex-end}
+.gb-adm-group{display:flex;flex-direction:column;gap:7px;min-width:0}
+.gb-adm-group > span{font:500 12px/1 var(--font-jetbrains),ui-monospace,monospace;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.gb-adm-group > div{display:flex;gap:6px;flex-wrap:wrap}
+
+/* One card shape for the whole panel, and one label above every field. */
+.gb-adm-card{background:var(--raised);border:1px solid var(--rule);
+  border-radius:var(--r-l);padding:20px}
+.gb-adm-card + .gb-adm-card{margin-top:20px}
+.gb-adm-card > h3{font:600 18px/1.3 var(--font-outfit),sans-serif;margin:0 0 6px}
+.gb-adm-card > p{margin:0 0 16px;font:400 15px/1.6 var(--font-outfit),sans-serif;
+  color:var(--ink-2);text-wrap:pretty;max-width:64ch}
+.gb-adm-label{display:block;font:600 13px/1 var(--font-outfit),sans-serif;
+  color:var(--ink-2);margin-bottom:8px}
+
+/* Short fields pair up; prose runs full width. Mixing the two in one grid was what
+   left a one-line title sitting beside a ten-line paragraph with a void under it. */
+.gb-adm-short{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:900px){.gb-adm-short{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.gb-adm-stack{display:flex;flex-direction:column;gap:20px}
+
+/* Buttons carry body-sized labels. A 48px button with 12px text reads as a mistake,
+   and every one of them had 12px text. */
+.gb-adm-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gb-adm-btn,.gb-adm-ghost,.gb-adm-warn{min-height:46px;padding:0 18px;border-radius:var(--r-m);
+  font:600 15px/1 var(--font-outfit),sans-serif;cursor:pointer;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.gb-adm-btn{border:none;background:var(--panel);color:var(--panel-ink)}
+.gb-adm-ghost{border:1.5px solid var(--rule-2);background:transparent;color:var(--ink-2)}
+.gb-adm-ghost:hover{border-color:var(--gold);color:var(--ink)}
+.gb-adm-warn{border:1.5px solid var(--warn-rule);background:var(--warn-bg);color:var(--gold-ink)}
+.gb-adm-btn:disabled,.gb-adm-ghost:disabled{opacity:.5;cursor:not-allowed}
+.gb-adm-add{width:100%;min-height:50px;margin-top:16px;border:1.5px dashed var(--rule-2);
+  border-radius:var(--r-m);background:transparent;color:var(--ink-2);
+  font:600 15px/1 var(--font-outfit),sans-serif;cursor:pointer}
+.gb-adm-add:hover{border-color:var(--gold);color:var(--ink)}
+
+/* The count, the KKM label and its input used to run together as "5 soal KKM 70". */
+.gb-adm-meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:14px 0}
+.gb-adm-meta > span{font:500 13px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--ink-3)}
+.gb-adm-meta label{display:flex;align-items:center;gap:9px;
+  font:500 13px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--ink-3)}
+.gb-adm-meta input{width:74px;min-height:44px;border:1px solid var(--rule-2);
+  border-radius:var(--r-s);padding:0 10px;background:var(--paper);color:var(--ink);
+  font:500 15px/1 var(--font-jetbrains),ui-monospace,monospace}
+
+.gb-adm-num{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.gb-adm-num > b{font:500 13px/1 var(--font-jetbrains),ui-monospace,monospace;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500}

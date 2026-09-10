@@ -334,6 +334,7 @@ const CONTENT = {
     "bobotKuis": 50,
     "bobotLkpd": 25,
     "bobotEsai": 25,
+    "bobotLab": 0,
     "kkmModul": 75
   },
   "langkah": {
@@ -669,6 +670,237 @@ const CONTENT = {
         {
           "type": "esai",
           "q": "Rancang satu percobaan sederhana untuk membuktikan bahwa ketegangan membran gendang beleq memengaruhi frekuensi bunyinya. Sebutkan variabel bebas, variabel terikat, dan variabel kontrolnya."
+        }
+      ]
+    },
+    {
+      "id": "lab1",
+      "jenis": "lab",
+      "open": true,
+      "kkm": 70,
+      "title": "Dugaan Lab · Tebak dulu, buktikan sesudahnya",
+      "desc": "Sembilan dugaan yang dijawab sebelum tuasnya digeser. Satu kesempatan tiap dugaan.",
+      "items": [
+        {
+          "type": "dugaan",
+          "sim": "drum",
+          "amati": "nada",
+          "ubah": "amp",
+          "arah": "acak",
+          "qNaik": "Gendang ditabuh lebih kuat, pengaturan lain tidak disentuh. Tinggi nada yang kamu dengar akan…",
+          "qTurun": "Gendang ditabuh lebih pelan, pengaturan lain tidak disentuh. Tinggi nada yang kamu dengar akan…",
+          "awal": {
+            "drum": "mame",
+            "medium": "udara",
+            "zone": "tengah",
+            "tension": 0.45
+          },
+          "acak": {
+            "freq": [
+              140,
+              520,
+              20
+            ],
+            "amp": [
+              0.2,
+              0.6,
+              0.05
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "drum",
+          "amati": "nada",
+          "ubah": "tension",
+          "arah": "acak",
+          "qNaik": "Tali gendang ditarik sehingga membrannya lebih kencang. Tinggi nada yang kamu dengar akan…",
+          "qTurun": "Tali gendang dikendurkan sehingga membrannya lebih lemas. Tinggi nada yang kamu dengar akan…",
+          "awal": {
+            "medium": "udara",
+            "zone": "tengah",
+            "amp": 0.5
+          },
+          "acak": {
+            "freq": [
+              140,
+              520,
+              20
+            ],
+            "tension": [
+              0.1,
+              0.55,
+              0.05
+            ],
+            "drum": [
+              "mame",
+              "nine"
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "drum",
+          "amati": "nada",
+          "ubah": "drum",
+          "arah": "acak",
+          "qNaik": "Gendang Nine yang kecil diganti dengan Gendang Mame yang besar, dengan ketegangan dan pukulan yang sama. Tinggi nada akan…",
+          "qTurun": "Gendang Mame yang besar diganti dengan Gendang Nine yang kecil, dengan ketegangan dan pukulan yang sama. Tinggi nada akan…",
+          "awal": {
+            "medium": "udara",
+            "zone": "tengah",
+            "amp": 0.5
+          },
+          "acak": {
+            "freq": [
+              140,
+              520,
+              20
+            ],
+            "tension": [
+              0.2,
+              0.8,
+              0.05
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "drum",
+          "amati": "keras",
+          "ubah": "tension",
+          "arah": "acak",
+          "qNaik": "Membran dikencangkan, tetapi gendang ditabuh sama kuatnya seperti tadi. Taraf intensitas dalam desibel akan…",
+          "qTurun": "Membran dikendurkan, tetapi gendang ditabuh sama kuatnya seperti tadi. Taraf intensitas dalam desibel akan…",
+          "awal": {
+            "drum": "mame",
+            "medium": "udara",
+            "zone": "tengah"
+          },
+          "acak": {
+            "freq": [
+              140,
+              520,
+              20
+            ],
+            "amp": [
+              0.25,
+              0.75,
+              0.05
+            ],
+            "tension": [
+              0.1,
+              0.55,
+              0.05
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "doppler",
+          "amati": "didengar",
+          "ubah": "dopV",
+          "arah": "acak",
+          "pos": -0.5,
+          "qNaik": "Rombongan nyongkolan sedang MENDEKATIMU. Kalau mereka berjalan lebih cepat, frekuensi yang kamu dengar akan…",
+          "qTurun": "Rombongan nyongkolan sedang MENDEKATIMU. Kalau mereka berjalan lebih pelan, frekuensi yang kamu dengar akan…",
+          "awal": {},
+          "acak": {
+            "dopF": [
+              240,
+              600,
+              40
+            ],
+            "dopV": [
+              8,
+              14,
+              2
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "doppler",
+          "amati": "didengar",
+          "ubah": "dopV",
+          "arah": "acak",
+          "pos": 0.5,
+          "qNaik": "Rombongan sudah lewat dan sedang MENJAUH darimu. Kalau mereka berjalan lebih cepat, frekuensi yang kamu dengar akan…",
+          "qTurun": "Rombongan sudah lewat dan sedang MENJAUH darimu. Kalau mereka berjalan lebih pelan, frekuensi yang kamu dengar akan…",
+          "awal": {},
+          "acak": {
+            "dopF": [
+              240,
+              600,
+              40
+            ],
+            "dopV": [
+              8,
+              14,
+              2
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "doppler",
+          "amati": "didengar",
+          "ubah": "dopV",
+          "arah": "acak",
+          "pos": 0,
+          "qNaik": "Tepat pada saat rombongan berada paling dekat denganmu, mereka tidak sedang mendekat maupun menjauh. Kalau mereka berjalan lebih cepat, frekuensi yang kamu dengar pada saat itu akan…",
+          "qTurun": "Tepat pada saat rombongan berada paling dekat denganmu, mereka tidak sedang mendekat maupun menjauh. Kalau mereka berjalan lebih pelan, frekuensi yang kamu dengar pada saat itu akan…",
+          "awal": {},
+          "acak": {
+            "dopF": [
+              240,
+              600,
+              40
+            ],
+            "dopV": [
+              8,
+              14,
+              2
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "ansambel",
+          "amati": "layangan",
+          "ubah": "ansNine",
+          "arah": "acak",
+          "qNaik": "Nada Nine dinaikkan sehingga makin dekat ke nada Mame. Jumlah pelayangan per detik akan…",
+          "qTurun": "Nada Nine diturunkan sehingga makin jauh dari nada Mame. Jumlah pelayangan per detik akan…",
+          "awal": {
+            "ansMame": 170
+          },
+          "acak": {
+            "ansNine": [
+              130,
+              154,
+              4
+            ]
+          }
+        },
+        {
+          "type": "dugaan",
+          "sim": "ansambel",
+          "amati": "layangan",
+          "ubah": "ansMame",
+          "arah": "acak",
+          "qNaik": "Nada Nine dibiarkan, nada Mame dinaikkan sehingga keduanya makin berjauhan. Jumlah pelayangan per detik akan…",
+          "qTurun": "Nada Nine dibiarkan, nada Mame diturunkan sehingga keduanya makin berdekatan. Jumlah pelayangan per detik akan…",
+          "awal": {
+            "ansMame": 170
+          },
+          "acak": {
+            "ansNine": [
+              130,
+              154,
+              4
+            ]
+          }
         }
       ]
     }

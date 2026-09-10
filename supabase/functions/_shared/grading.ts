@@ -4,10 +4,22 @@
 // never be graded by one set of rules and shown feedback from another. The answer
 // keys themselves never reach the browser — only this logic is shared.
 
-export type ItemType = 'pg' | 'bs' | 'multi' | 'isian' | 'cocok' | 'esai';
+import { type Siap } from './physics.ts';
+
+export type ItemType = 'pg' | 'bs' | 'multi' | 'isian' | 'cocok' | 'esai' | 'dugaan';
 
 export interface Item {
   type: ItemType;
+  // A `dugaan` item carries the mission definition instead of a key; see physics.ts.
+  sim?: 'drum' | 'doppler' | 'ansambel';
+  amati?: 'nada' | 'keras' | 'didengar' | 'layangan';
+  ubah?: string;
+  arah?: 'naik' | 'turun' | 'acak';
+  qNaik?: string;
+  qTurun?: string;
+  pos?: number;
+  awal?: Record<string, unknown>;
+  acak?: Record<string, number[] | string[]>;
   q?: string;
   key?: number | string;
   keys?: number[];
@@ -27,7 +39,7 @@ export interface Grade {
 }
 
 export const TYPE_XP: Record<string, number> = {
-  pg: 10, bs: 8, multi: 15, isian: 12, cocok: 20, esai: 25,
+  pg: 10, bs: 8, multi: 15, isian: 12, cocok: 20, esai: 25, dugaan: 12,
 };
 
 // A student who writes the physically best answer — 0,2 W/m² — used to be marked
@@ -38,7 +50,23 @@ const SUP: Record<string, string> = {
   '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-',
 };
 
-export const norm = (s: unknown): string => String(s == null ? '' : s)
+// Teacher-authored fields carry markup now, so an answer key can arrive as
+// 'W/m<sup>2</sup>' where it used to be 'W/m²'. Both have to reach the comparison
+// as the same string, which is why inline tags vanish and block tags become a
+// space: dropping <sup> keeps 'w/m2' together, while dropping </p><p> would weld
+// two sentences into one word.
+const BLOCK = /<\/?(?:p|div|br|li|ul|ol|h[1-6]|blockquote|pre|tr|td|th|table|hr)\b[^>]*>/gi;
+const ENT: Record<string, string> = {
+  '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'",
+  '&apos;': "'", '&nbsp;': ' ',
+};
+
+export const teks = (s: unknown): string => String(s == null ? '' : s)
+  .replace(BLOCK, ' ')
+  .replace(/<[^>]*>/g, '')
+  .replace(/&(?:amp|lt|gt|quot|#39|apos|nbsp);/g, (e) => ENT[e] || e);
+
+export const norm = (s: unknown): string => teks(s)
   .toLowerCase()
   .replace(/[²³⁰¹⁴-⁹⁻]/g, (c) => SUP[c] || c)
   .replace(/[×⋅]/g, 'x')
@@ -82,7 +110,16 @@ export const seededPerm = (n: number, seed: unknown): number[] => {
   return a;
 };
 
-export function grade(it: Item, v: unknown): Grade {
+export function grade(it: Item, v: unknown, siap?: Siap): Grade {
+  // A lab guess has no key to compare against. The physics decides, from the
+  // conditions and the direction this particular student was given. `siap` is built
+  // by the caller from the student id, never taken from the request body — a browser
+  // that could choose its own conditions could choose ones it already knows.
+  if (it.type === 'dugaan') {
+    if (!siap) throw new Error('Dugaan lab butuh kondisi simulasi');
+    const ok = v === siap.benar;
+    return { ok, ratio: ok ? 1 : 0 };
+  }
   if (it.type === 'pg' || it.type === 'bs') {
     const ok = v === it.key;
     return { ok, ratio: ok ? 1 : 0 };
@@ -120,6 +157,7 @@ export function grade(it: Item, v: unknown): Grade {
 // Rejects an answer the student has not actually filled in. Returned message is
 // shown as-is; null means the answer is ready to be graded.
 export function validate(it: Item, v: unknown): string | null {
+  if (it.type === 'dugaan' && v !== 'naik' && v !== 'turun' && v !== 'tetap') return 'Pilih dugaanmu dulu';
   if ((it.type === 'pg' || it.type === 'bs') && v === undefined) return 'Pilih jawabanmu dulu';
   if (it.type === 'isian' && !String(v || '').trim()) return 'Isi jawabanmu dulu ya';
   if (it.type === 'esai' && String(v || '').trim().length < 25) return 'Tulis jawaban yang lebih lengkap dulu';

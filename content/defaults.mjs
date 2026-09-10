@@ -257,6 +257,9 @@ CMS_DEFAULTS.penilaian = {
   bobotKuis: 50,
   bobotLkpd: 25,
   bobotEsai: 25,
+  // Nol sampai guru menaikkannya sendiri. Nilai akhir siswa yang belum menyentuh
+  // lab tidak boleh bergeser hanya karena fitur ini dipasang di tengah semester.
+  bobotLab: 0,
   kkmModul: 75
 };
 
@@ -264,6 +267,80 @@ CMS_DEFAULTS.langkah = {
   info: true, materi: true, lab: true, lkpd: true, kuis: true, rangkuman: true
 };
 
-CMS_DEFAULTS.banks = BANK_DEFAULTS;
+// Dugaan Lab. Tidak ada satu pun kunci jawaban di sini, dan itu disengaja: arah yang
+// benar dihitung ulang oleh simulasinya sendiri di supabase/functions/_shared/physics.ts.
+// Guru menulis tuas mana yang bergerak, bukan apa akibatnya.
+//
+// `acak` mengacak kondisi awal per siswa dengan benih dari id siswa, jadi dua siswa
+// yang duduk bersebelahan menghadapi angka berbeda untuk misi yang sama.
+const LAB_MISI = {
+  id: 'lab1', jenis: 'lab', open: true, kkm: 70,
+  title: 'Dugaan Lab \u00b7 Tebak dulu, buktikan sesudahnya',
+  desc: 'Sembilan dugaan yang dijawab sebelum tuasnya digeser. Satu kesempatan tiap dugaan.',
+  items: [
+    // \u2500\u2500 Tabuh gendang \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    { type: 'dugaan', sim: 'drum', amati: 'nada', ubah: 'amp', arah: 'acak',
+      qNaik: 'Gendang ditabuh lebih kuat, pengaturan lain tidak disentuh. Tinggi nada yang kamu dengar akan\u2026',
+      qTurun: 'Gendang ditabuh lebih pelan, pengaturan lain tidak disentuh. Tinggi nada yang kamu dengar akan\u2026',
+      awal: { drum: 'mame', medium: 'udara', zone: 'tengah', tension: 0.45 },
+      acak: { freq: [140, 520, 20], amp: [0.2, 0.6, 0.05] },
+      fb: 'Amplitudo mengubah kuat-lemah bunyi, bukan tinggi-rendahnya. Sekuat atau sepelan apa pun kamu menabuh, nadanya tetap.' },
+
+    { type: 'dugaan', sim: 'drum', amati: 'nada', ubah: 'tension', arah: 'acak',
+      qNaik: 'Tali gendang ditarik sehingga membrannya lebih kencang. Tinggi nada yang kamu dengar akan\u2026',
+      qTurun: 'Tali gendang dikendurkan sehingga membrannya lebih lemas. Tinggi nada yang kamu dengar akan\u2026',
+      awal: { medium: 'udara', zone: 'tengah', amp: 0.5 },
+      acak: { freq: [140, 520, 20], tension: [0.1, 0.55, 0.05], drum: ['mame', 'nine'] },
+      fb: 'Membran yang lebih kencang bergetar lebih cepat sehingga frekuensinya naik; yang lebih lemas bergetar lebih lambat sehingga frekuensinya turun.' },
+
+    { type: 'dugaan', sim: 'drum', amati: 'nada', ubah: 'drum', arah: 'acak',
+      qNaik: 'Gendang Nine yang kecil diganti dengan Gendang Mame yang besar, dengan ketegangan dan pukulan yang sama. Tinggi nada akan\u2026',
+      qTurun: 'Gendang Mame yang besar diganti dengan Gendang Nine yang kecil, dengan ketegangan dan pukulan yang sama. Tinggi nada akan\u2026',
+      awal: { medium: 'udara', zone: 'tengah', amp: 0.5 },
+      acak: { freq: [140, 520, 20], tension: [0.2, 0.8, 0.05] },
+      fb: 'Membran yang lebih besar bergetar lebih lambat sehingga nadanya lebih rendah. Itu sebabnya Mame terdengar berat dan Nine terdengar ringan.' },
+
+    { type: 'dugaan', sim: 'drum', amati: 'keras', ubah: 'tension', arah: 'acak',
+      qNaik: 'Membran dikencangkan, tetapi gendang ditabuh sama kuatnya seperti tadi. Taraf intensitas dalam desibel akan\u2026',
+      qTurun: 'Membran dikendurkan, tetapi gendang ditabuh sama kuatnya seperti tadi. Taraf intensitas dalam desibel akan\u2026',
+      awal: { drum: 'mame', medium: 'udara', zone: 'tengah' },
+      acak: { freq: [140, 520, 20], amp: [0.25, 0.75, 0.05], tension: [0.1, 0.55, 0.05] },
+      fb: 'Taraf intensitas ditentukan amplitudo, bukan frekuensi. Mengubah ketegangan membran menggeser nada tanpa menggeser kekerasan bunyi.' },
+
+    // \u2500\u2500 Efek Doppler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    { type: 'dugaan', sim: 'doppler', amati: 'didengar', ubah: 'dopV', arah: 'acak', pos: -0.5,
+      qNaik: 'Rombongan nyongkolan sedang MENDEKATIMU. Kalau mereka berjalan lebih cepat, frekuensi yang kamu dengar akan\u2026',
+      qTurun: 'Rombongan nyongkolan sedang MENDEKATIMU. Kalau mereka berjalan lebih pelan, frekuensi yang kamu dengar akan\u2026',
+      awal: {}, acak: { dopF: [240, 600, 40], dopV: [8, 14, 2] },
+      fb: 'Sumber yang mendekat memampatkan gelombang di depannya. Makin cepat ia mendekat makin rapat gelombangnya, jadi frekuensi yang terdengar makin tinggi; makin pelan, makin mendekati frekuensi aslinya.' },
+
+    { type: 'dugaan', sim: 'doppler', amati: 'didengar', ubah: 'dopV', arah: 'acak', pos: 0.5,
+      qNaik: 'Rombongan sudah lewat dan sedang MENJAUH darimu. Kalau mereka berjalan lebih cepat, frekuensi yang kamu dengar akan\u2026',
+      qTurun: 'Rombongan sudah lewat dan sedang MENJAUH darimu. Kalau mereka berjalan lebih pelan, frekuensi yang kamu dengar akan\u2026',
+      awal: {}, acak: { dopF: [240, 600, 40], dopV: [8, 14, 2] },
+      fb: 'Sumber yang menjauh meregangkan gelombang di belakangnya. Makin cepat ia menjauh makin renggang gelombangnya, jadi frekuensi yang terdengar makin rendah; makin pelan, makin mendekati frekuensi aslinya.' },
+
+    { type: 'dugaan', sim: 'doppler', amati: 'didengar', ubah: 'dopV', arah: 'acak', pos: 0,
+      qNaik: 'Tepat pada saat rombongan berada paling dekat denganmu, mereka tidak sedang mendekat maupun menjauh. Kalau mereka berjalan lebih cepat, frekuensi yang kamu dengar pada saat itu akan\u2026',
+      qTurun: 'Tepat pada saat rombongan berada paling dekat denganmu, mereka tidak sedang mendekat maupun menjauh. Kalau mereka berjalan lebih pelan, frekuensi yang kamu dengar pada saat itu akan\u2026',
+      awal: {}, acak: { dopF: [240, 600, 40], dopV: [8, 14, 2] },
+      fb: 'Yang menggeser frekuensi hanya kecepatan searah garis pandang, dan tepat di titik terdekat kecepatan itu nol. Secepat atau sepelan apa pun mereka berjalan, di saat itu kamu mendengar frekuensi aslinya.' },
+
+    // \u2500\u2500 Mame & Nine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    { type: 'dugaan', sim: 'ansambel', amati: 'layangan', ubah: 'ansNine', arah: 'acak',
+      qNaik: 'Nada Nine dinaikkan sehingga makin dekat ke nada Mame. Jumlah pelayangan per detik akan\u2026',
+      qTurun: 'Nada Nine diturunkan sehingga makin jauh dari nada Mame. Jumlah pelayangan per detik akan\u2026',
+      awal: { ansMame: 170 }, acak: { ansNine: [130, 154, 4] },
+      fb: 'Pelayangan sama dengan selisih kedua frekuensi. Mendekatkan kedua nada mengecilkan selisihnya sehingga denyut makin jarang; menjauhkannya melebarkan selisih sehingga denyut makin sering.' },
+
+    { type: 'dugaan', sim: 'ansambel', amati: 'layangan', ubah: 'ansMame', arah: 'acak',
+      qNaik: 'Nada Nine dibiarkan, nada Mame dinaikkan sehingga keduanya makin berjauhan. Jumlah pelayangan per detik akan\u2026',
+      qTurun: 'Nada Nine dibiarkan, nada Mame diturunkan sehingga keduanya makin berdekatan. Jumlah pelayangan per detik akan\u2026',
+      awal: { ansMame: 170 }, acak: { ansNine: [130, 154, 4] },
+      fb: 'Yang menentukan denyut hanyalah jarak antara kedua nada. Melebarkan jaraknya membuat penguatan bunyi datang lebih sering, mempersempitnya membuat denyut makin jarang.' }
+  ]
+};
+
+CMS_DEFAULTS.banks = BANK_DEFAULTS.concat([LAB_MISI]);
 
 export { CMS_DEFAULTS, BANK_DEFAULTS };

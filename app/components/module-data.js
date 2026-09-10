@@ -22,7 +22,8 @@ const TYPES = [
   ['multi', 'Jawaban ganda', 15],
   ['isian', 'Isian singkat', 12],
   ['cocok', 'Pencocokan', 20],
-  ['esai', 'Esai', 25]
+  ['esai', 'Esai', 25],
+  ['dugaan', 'Dugaan lab', 12]
 ];
 const TYPE_LABEL = {}; const TYPE_XP = {};
 TYPES.forEach(([k, l, x]) => { TYPE_LABEL[k] = l; TYPE_XP[k] = x; });

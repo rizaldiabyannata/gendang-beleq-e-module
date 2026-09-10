@@ -1,5 +1,6 @@
 import React from 'react';
 import { sx } from './sx';
+import Rich from './Rich';
 
 export default function Kuis({ v }) {
   const { backToBanks, bankBarStyle, bankCards, bankKkmLabel, bankScoreLabel, bankScoreStyle, bankTitle, kuisSkorLabel, kuisSoal, openBankCount, resetKuis, showBank, showBankList, showBankLocked } = v;
@@ -17,7 +18,7 @@ export default function Kuis({ v }) {
             {(bankCards || []).map((b, bI) => (
               <button key={bI} onClick={b.onOpen} style={sx(b.style)}>
                 <span style={sx("display:flex;justify-content:space-between;align-items:flex-start;gap:12px;width:100%")}>
-                  <span style={sx("font:600 18px/1.3 var(--font-outfit),sans-serif;text-align:left;flex:1")}>{b.title}</span>
+                  <Rich tag="span" html={b.title} style={sx("font:600 18px/1.3 var(--font-outfit),sans-serif;text-align:left;flex:1")} />
                   <span style={sx(b.statusStyle)}>{b.statusLabel}</span>
                 </span>
                 <span style={sx("font:400 15px/1.6 var(--font-outfit),sans-serif;color:var(--ink-2);text-align:left;text-wrap:pretty")}>{b.desc}</span>
@@ -42,7 +43,7 @@ export default function Kuis({ v }) {
           <div style={sx("display:flex;gap:20px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--rule-2)")}>
             <div style={sx("flex:1;min-width:0")}>
               <div style={sx("font:500 13px/1 var(--font-outfit),sans-serif;color:var(--gold-ink)")}>{bankKkmLabel}</div>
-              <h2 style={sx("font-family:var(--font-instrument),serif;font-size:28px;line-height:1.1;margin:10px 0 12px;font-weight:400")}>{bankTitle}</h2>
+              <Rich tag="h2" html={bankTitle} style={sx("font-family:var(--font-instrument),serif;font-size:28px;line-height:1.1;margin:10px 0 12px;font-weight:400")} />
               <div style={sx("font:500 13px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--ink-2)")}>{kuisSkorLabel}</div>
               <div style={sx("height:4px;border-radius:var(--r-full);background:var(--rule);overflow:hidden;margin-top:12px")}><div style={sx(bankBarStyle)}></div></div>
             </div>
@@ -64,7 +65,7 @@ export default function Kuis({ v }) {
                   <div style={sx("flex:1")}></div>
                   <div style={sx("font:500 13px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--ink-3)")}>{q.xpLabel}</div>
                 </div>
-                <div style={sx("font:500 17px/1.6 var(--font-outfit),sans-serif;color:var(--ink);margin-bottom:18px;text-wrap:pretty")}>{q.text}</div>
+                <Rich block tag="div" html={q.text} style={sx("font:500 17px/1.6 var(--font-outfit),sans-serif;color:var(--ink);margin-bottom:18px;text-wrap:pretty")} />
 
                 {q.isPg || q.isMulti ? (
                   <>
@@ -73,7 +74,7 @@ export default function Kuis({ v }) {
                       {(q.options || []).map((o, oI) => (
                         <button key={oI} onClick={o.onPick} aria-pressed={!!o.selected} style={sx(o.style)}>
                           <span style={sx(o.letterStyle)}>{o.letter}</span>
-                          <span style={sx("flex:1;text-align:left;font:400 16px/1.6 var(--font-outfit),sans-serif;text-wrap:pretty")}>{o.text}</span>
+                          <Rich tag="span" html={o.text} style={sx("flex:1;text-align:left;font:400 16px/1.6 var(--font-outfit),sans-serif;text-wrap:pretty")} />
                           {o.mark ? <span aria-hidden="true" style={sx("flex:none;font:600 17px/1.5 var(--font-outfit),sans-serif")}>{o.mark}</span> : null}
                         </button>
                       ))}
@@ -86,7 +87,7 @@ export default function Kuis({ v }) {
                     {(q.options || []).map((o, oI) => (
                       <button key={oI} onClick={o.onPick} aria-pressed={!!o.selected} style={sx(o.style)}>
                         <span aria-hidden="true" style={sx(o.letterStyle)}>{o.letter}</span>
-                        <span style={sx("font:600 16px/1 var(--font-outfit),sans-serif")}>{o.text}{o.mark ? ' ' + o.mark : ''}</span>
+                        <span style={sx("font:600 16px/1 var(--font-outfit),sans-serif")}><Rich tag="span" html={o.text} />{o.mark ? ' ' + o.mark : ''}</span>
                       </button>
                     ))}
                   </div>
@@ -102,14 +103,14 @@ export default function Kuis({ v }) {
                       {(q.rights || []).map((r, rI) => (
                         <div key={rI} style={sx("display:flex;gap:12px;align-items:flex-start")}>
                           <span style={sx("flex:none;width:24px;height:24px;border-radius:var(--r-s);background:var(--panel);color:var(--panel-ink);font:500 12px/24px var(--font-jetbrains),ui-monospace,monospace;text-align:center")}>{r.letter}</span>
-                          <span style={sx("flex:1;font:400 15px/1.6 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")}>{r.text}</span>
+                          <Rich tag="span" html={r.text} style={sx("flex:1;font:400 15px/1.6 var(--font-outfit),sans-serif;color:var(--ink);text-wrap:pretty")} />
                         </div>
                       ))}
                     </div>
                     <div style={sx("display:flex;flex-direction:column;gap:10px")}>
                       {(q.lefts || []).map((l, lI) => (
                         <div key={lI} style={sx(l.rowStyle)}>
-                          <div style={sx("font:500 16px/1.5 var(--font-outfit),sans-serif;color:var(--ink)")}>{l.text}</div>
+                          <Rich tag="div" html={l.text} style={sx("font:500 16px/1.5 var(--font-outfit),sans-serif;color:var(--ink)")} />
                           <div style={sx("display:flex;gap:7px")}>
                             {(l.picks || []).map((p, pI) => (
                               <button key={pI} onClick={p.onPick} aria-label={"Pasangkan dengan pilihan " + p.letter} style={sx(p.style)}>{p.letter}</button>
@@ -131,12 +132,12 @@ export default function Kuis({ v }) {
                 {q.showAction ? (
                   <button onClick={q.onAction} style={sx("width:100%;min-height:52px;margin-top:18px;border:none;border-radius:var(--r-m);background:var(--panel);color:var(--panel-ink);font:600 16px/1 var(--font-outfit),sans-serif;cursor:pointer")}>{q.actionLabel}</button>
                 ) : null}
-                {q.showFeedback ? <div style={sx(q.feedbackStyle)}>{q.feedback}</div> : null}
-                {q.showKunci ? <div style={sx("margin-top:12px;font:500 15px/1.6 var(--font-outfit),sans-serif;color:var(--ok)")}>{q.kunci}</div> : null}
+                {q.showFeedback ? <Rich block tag="div" html={q.feedback} style={sx(q.feedbackStyle)} /> : null}
+                {q.showKunci ? <Rich tag="div" html={q.kunci} style={sx("margin-top:12px;font:500 15px/1.6 var(--font-outfit),sans-serif;color:var(--ok)")} /> : null}
                 {q.showModel ? (
                   <div style={sx("margin-top:16px;padding:18px;border-radius:var(--r-m);background:var(--paper-2)")}>
                     <div style={sx("font:500 13px/1.4 var(--font-outfit),sans-serif;color:var(--gold-ink)")}>Contoh jawaban ideal · {q.modelLabel}</div>
-                    <div style={sx("font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);margin-top:10px;text-wrap:pretty")}>{q.model}</div>
+                    <Rich block tag="div" html={q.model} style={sx("font:400 16px/1.7 var(--font-outfit),sans-serif;color:var(--ink);margin-top:10px;text-wrap:pretty")} />
                   </div>
                 ) : null}
                 {q.teacherNote ? (
