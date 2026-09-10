@@ -24,7 +24,7 @@ export async function bootstrap() {
   }
 
   const { data: student } = await supabase
-    .from('students').select('id, class_id, nama, kelas, absen').eq('auth_uid', user.id).maybeSingle();
+    .from('students').select('id, class_id, nama, kelas, absen, progress').eq('auth_uid', user.id).maybeSingle();
   return student ? { role: 'siswa', user, student } : { role: 'tamu', user };
 }
 
@@ -87,4 +87,12 @@ export async function publish() {
   const { data, error } = await supabase.rpc('publish_content');
   if (error) throw new Error(errText(error));
   return data;
+}
+
+// The five progress keys that have no other home on the server. Written through a
+// function rather than a direct update, because students and teachers share the
+// `authenticated` role — see the comment on save_progress in 0003.
+export async function saveProgress(payload) {
+  const { error } = await supabase.rpc('save_progress', { p: payload });
+  if (error) throw new Error(errText(error));
 }

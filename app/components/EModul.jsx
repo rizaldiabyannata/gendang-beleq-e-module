@@ -4,10 +4,11 @@ import React from 'react';
 import { sx } from './sx';
 import { configured, errText, supabase } from '../lib/supabase';
 import { validate } from '../../supabase/functions/_shared/grading.ts';
-import { bootstrap, fetchDraft, fetchPublished, joinClass, publish, saveDraft, signOut, teacherSignIn } from '../lib/session';
+import { bootstrap, fetchDraft, fetchPublished, joinClass, publish, saveDraft, saveProgress, signOut, teacherSignIn } from '../lib/session';
+import { hydrateProgress, pickProgress } from '../lib/progress';
 import { bankScore, createClass, essayScore, finalScore, gradeLkpd, gradeSubmission, listClasses, loadClassWork, toCsv, updateClass } from '../lib/teacher';
 import {
-  KEY, CMS_KEY, SPEED, CMS_DEFAULTS, cloneCms,
+  CMS_KEY, SPEED, CMS_DEFAULTS, cloneCms,
   TYPES, TYPE_LABEL, TYPE_XP, LETTERS, seededPerm,
 } from './module-data';
 import SideNav from './SideNav';
@@ -54,22 +55,6 @@ export default class EModul extends React.Component {
   };
 
   componentDidMount() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const s = JSON.parse(raw);
-        this.setState({ xp: s.xp || 0, done: s.done || {}, fields: s.fields || {}, answers: s.answers || {}, refleksi: s.refleksi || {}, videoUrl: s.videoUrl || '', draft: s.draft || {} });
-      }
-    } catch {}
-    try {
-      const rawC = localStorage.getItem(CMS_KEY);
-      if (rawC) {
-        const c = JSON.parse(rawC);
-        const merged = cloneCms(CMS_DEFAULTS);
-        Object.keys(c || {}).forEach(k => { if (c[k] !== undefined && c[k] !== null) merged[k] = c[k]; });
-        this.setState({ cms: merged });
-      }
-    } catch {}
     this.bootSession();
     this.env = 0; this.phase = 0; this.tPrev = performance.now();
     this.loop = (t) => {
@@ -96,6 +81,7 @@ export default class EModul extends React.Component {
   componentWillUnmount() {
     clearTimeout(this._draftT);
     clearTimeout(this._lkpdT);
+    clearTimeout(this._progT);
     clearTimeout(this._tt);
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
@@ -109,7 +95,11 @@ export default class EModul extends React.Component {
     try {
       const sess = await bootstrap();
       this.setState({ role: sess.role, me: sess.student || null, teacherNama: sess.nama || '', authReady: true });
-      if (sess.role === 'siswa') { this.loadMarks().catch(() => {}); this.loadSheets().catch(() => {}); }
+      if (sess.role === 'siswa') {
+        this.setState(hydrateProgress(sess.student && sess.student.progress));
+        this.loadMarks().catch(() => {});
+        this.loadSheets().catch(() => {});
+      }
     } catch { this.setState({ authReady: true }); }
     try {
       const published = await fetchPublished();
@@ -243,7 +233,10 @@ export default class EModul extends React.Component {
     this.setState({ authBusy: true, authError: '' });
     try {
       const student = await joinClass(this.state.fCode, this.state.fNama, this.state.fKelas, this.state.fAbsen);
-      this.setState({ role: 'siswa', me: student, gate: null, authBusy: false },
+      // join_class returns the whole students row, so the progress column rides
+      // along and a student rejoining on a new phone lands on their own progress.
+      this.setState(Object.assign({ role: 'siswa', me: student, gate: null, authBusy: false },
+        hydrateProgress(student.progress)),
         () => { this.loadMarks().catch(() => {}); this.loadSheets().catch(() => {}); });
       this.toast('Selamat datang, ' + student.nama.split(' ')[0] + '!');
     } catch (e) {
@@ -344,16 +337,22 @@ export default class EModul extends React.Component {
     if (msg) this.toast(msg);
   }
 
-  persist(extra) {
-    const s = Object.assign({ xp: this.state.xp, done: this.state.done, fields: this.state.fields, answers: this.state.answers, refleksi: this.state.refleksi, videoUrl: this.state.videoUrl, draft: this.state.draft }, extra || {});
-    try {
-      localStorage.setItem(KEY, JSON.stringify(s));
-      if (this.state.saveFailed) this.setState({ saveFailed: false });
-    } catch {
-      // Quota exceeded, private mode, or blocked storage. This used to be swallowed
-      // while the LKPD told the student their work was saved automatically.
-      if (!this.state.saveFailed) this.setState({ saveFailed: true });
-    }
+  // Progress lives on the server now, so a student who opens the module on another
+  // phone picks up where they left off — and the teacher can see it. Debounced
+  // because this fires on every keypress in the worksheet.
+  //
+  // Guests and teachers have no row in `students`. Without the guard below the RPC
+  // would fail on every keystroke and raise the "not saved" warning at someone who
+  // has nothing to save.
+  persist() {
+    if (this.state.role !== 'siswa') return;
+    const payload = pickProgress(this.state);
+    clearTimeout(this._progT);
+    this._progT = setTimeout(() => {
+      saveProgress(payload)
+        .then(() => { if (this.state.saveFailed) this.setState({ saveFailed: false }); })
+        .catch(() => { if (!this.state.saveFailed) this.setState({ saveFailed: true }); });
+    }, 2000);
   }
   // The student's own copy of their worksheet. There is no server to submit to, so
   // this file is what actually gets handed in — and it is the only route by which a
@@ -419,7 +418,7 @@ export default class EModul extends React.Component {
   }
   setField(k, v) {
     const fields = Object.assign({}, this.state.fields); fields[k] = v;
-    this.setState({ fields }, () => { this.persist(); this.saveLkpdDraft(); });
+    this.setState({ fields }, () => this.saveLkpdDraft());
   }
 
   ac() {
@@ -1741,11 +1740,13 @@ export default class EModul extends React.Component {
         this.setState({ cms: d }, () => this.persistCms(d));
         this.toast('Draf dikembalikan ke bawaan');
       },
+      // Only the keys save_progress actually owns. Clearing `answers` and `fields`
+      // here would empty the screen while `submissions` and `lkpd` kept every row,
+      // so the panel would lie until the next reload.
       onResetProgress: () => {
-        if (!window.confirm('Hapus seluruh progres siswa di perangkat ini? Jawaban LKPD, kuis, dan refleksi akan hilang dan tidak bisa dikembalikan.')) return;
-        try { localStorage.removeItem(KEY); } catch {}
-        this.setState({ xp: 0, done: {}, answers: {}, fields: {} });
-        this.toast('Progres siswa di perangkat ini dihapus');
+        if (!window.confirm('Hapus seluruh progres belajarmu? XP, langkah yang sudah selesai, dan refleksi akan hilang dan tidak bisa dikembalikan.\n\nJawaban kuis dan LKPD yang sudah disetorkan tidak ikut terhapus.')) return;
+        this.setState({ xp: 0, done: {}, refleksi: {}, videoUrl: '', draft: {} }, () => this.persist());
+        this.toast('Progres belajarmu dihapus');
       },
       onExportCms: () => {
         try {
