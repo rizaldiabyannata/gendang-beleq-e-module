@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Gendang Beleq">
+  <rect width="64" height="64" rx="14" fill="#15122f"/>
+  <ellipse cx="32" cy="24" rx="20" ry="9" fill="#e0a33f"/>
+  <path d="M12 24v14c0 5 9 9 20 9s20-4 20-9V24c0 5-9 9-20 9s-20-4-20-9z" fill="#a8532f"/>
+  <ellipse cx="32" cy="24" rx="13" ry="5.5" fill="#f7f0e2" opacity=".9"/>
+</svg>

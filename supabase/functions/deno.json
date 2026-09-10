@@ -1,0 +1,5 @@
+{
+  "//": "Deno owns this directory. Type-check it with: deno check supabase/functions/**/*.ts",
+  "imports": { "@supabase/supabase-js": "jsr:@supabase/supabase-js@2" },
+  "compilerOptions": { "lib": ["deno.window", "esnext"] }
+}
