@@ -6,7 +6,7 @@ import { configured, errText, supabase } from '../lib/supabase';
 import { validate } from '../../supabase/functions/_shared/grading.ts';
 import { bootstrap, fetchDraft, fetchPublished, joinClass, publish, saveDraft, saveProgress, signOut, teacherSignIn } from '../lib/session';
 import { hydrateProgress, pickProgress } from '../lib/progress';
-import { bankScore, createClass, essayScore, finalScore, gradeLkpd, gradeSubmission, listClasses, loadClassWork, toCsv, updateClass } from '../lib/teacher';
+import { bankScore, createClass, essayScore, finalScore, gradeLkpd, gradeSubmission, listClasses, loadClassWork, toCsv, updateClass, watchClass } from '../lib/teacher';
 import {
   CMS_KEY, SPEED, CMS_DEFAULTS, cloneCms,
   TYPES, TYPE_LABEL, TYPE_XP, LETTERS, seededPerm,
@@ -42,7 +42,7 @@ export default class EModul extends React.Component {
     role: 'tamu', me: null, gate: null, authBusy: false, authError: '', sending: {}, sheets: {},
     // Teacher-side state. None of it is fetched until the panel is actually opened.
     classes: [], classId: null, work: null, gbLoading: false, newClassName: '',
-    matSection: null, markMode: null, markIdx: 0, markScore: null, markNote: '',
+    matSection: null, markMode: null, markIdx: 0, markScore: null, markNote: '', liveOk: false,
     markRubric: {}, markBusy: false, publishedAt: null, draftSaved: true,
     fEmail: '', fPass: '', fCode: '', fNama: '', fKelas: '', fAbsen: '',
     amp: 0.6, freq: 220, tension: 0.5, drum: 'mame', medium: 'udara', lastHit: '—',
@@ -83,6 +83,7 @@ export default class EModul extends React.Component {
     clearTimeout(this._lkpdT);
     clearTimeout(this._progT);
     clearTimeout(this._tt);
+    this.stopWatch();
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
     this.stopDop();
@@ -245,6 +246,7 @@ export default class EModul extends React.Component {
   }
 
   async doSignOut() {
+    this.stopWatch();
     await signOut();
     this.setState({ role: 'tamu', me: null, gate: null, screen: 'home' });
   }
@@ -281,6 +283,33 @@ export default class EModul extends React.Component {
       }
     } catch (e) { this.toast(e.message); }
     this.refreshClasses();
+    this.startWatch();
+  }
+
+  // Live updates for the panel. Every event triggers the same thing — refetch the
+  // class on screen — so they are collapsed into one call rather than patched row
+  // by row. The panel can then never disagree with the database.
+  startWatch() {
+    if (this._unwatch) return;
+    this._unwatch = watchClass(
+      () => {
+        clearTimeout(this._liveT);
+        this._liveT = setTimeout(() => this.loadWork(), 500);
+      },
+      (live) => this.setState({ liveOk: live }),
+    );
+    // Safety net for a dropped channel. supabase-js reconnects on its own, but until
+    // it does the panel would quietly show stale marks, which is worse than a refetch.
+    clearInterval(this._pollT);
+    this._pollT = setInterval(() => { if (!this.state.liveOk) this.loadWork(); }, 15000);
+  }
+
+  stopWatch() {
+    if (this._unwatch) { this._unwatch(); this._unwatch = null; }
+    clearTimeout(this._liveT);
+    clearInterval(this._pollT);
+    this._pollT = null;
+    if (this.state.liveOk) this.setState({ liveOk: false });
   }
 
   async refreshClasses() {
@@ -605,7 +634,13 @@ export default class EModul extends React.Component {
         : 'border:1px solid ' + (dark ? 'var(--panel-rule)' : 'var(--rule-2)') + ';background:transparent;color:' + (dark ? 'var(--panel-ink-2)' : 'var(--ink-2)') + ';');
   }
 
-  go(screen) { this.setState({ screen: screen }, () => this.focusMain()); window.scrollTo(0, 0); }
+  go(screen) {
+    // Every screen change in this component routes through here, so one guard closes
+    // every exit from the panel and the channel never outlives the view that uses it.
+    if (this.state.screen === 'admin' && screen !== 'admin') this.stopWatch();
+    this.setState({ screen: screen }, () => this.focusMain());
+    window.scrollTo(0, 0);
+  }
   focusMain() { if (this.mainRef && this.mainRef.current) this.mainRef.current.focus({ preventScroll: true }); }
 
   renderVals() {

@@ -66,6 +66,23 @@ export async function gradeLkpd(id, score, note, rubric) {
   if (error) throw new Error(errText(error));
 }
 
+// The teacher panel used to load once and then sit still, so work a student handed
+// in during the lesson only appeared if the teacher closed the panel and reopened it.
+//
+// No per-class filter: `submissions` and `lkpd` have no class_id column, and the
+// reaction to any event is the same either way — refetch the class on screen. An
+// event from another class costs one wasted refetch, which the caller's debounce
+// already absorbs. RLS still applies to every event, so nothing arrives here that
+// this teacher could not already read.
+export function watchClass(onChange, onStatus) {
+  const ch = supabase.channel('kelas-live');
+  for (const table of ['students', 'submissions', 'lkpd']) {
+    ch.on('postgres_changes', { event: '*', schema: 'public', table }, onChange);
+  }
+  ch.subscribe((status) => onStatus(status === 'SUBSCRIBED'));
+  return () => { supabase.removeChannel(ch); };
+}
+
 // ── Marks ────────────────────────────────────────────────────────────────────
 
 // A bank's mark is the share of its items the student got right, out of every item
