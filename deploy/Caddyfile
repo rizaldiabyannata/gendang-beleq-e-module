@@ -1,0 +1,30 @@
+# Gerbang depan e-modul. Ganti kedua nama host di bawah dengan domainmu.
+#
+# Dua host, bukan satu dengan pembagian path: Kong sudah melayani /rest, /auth,
+# /realtime, dan /functions di akar host-nya sendiri, jadi memisahkan keduanya
+# berarti konfigurasi Kong tidak perlu disentuh sama sekali.
+#
+# Sertifikat HTTPS diurus Caddy sendiri, asal kedua nama sudah mengarah ke IP VPS ini.
+
+modul.contoh.id {
+	root * /srv/emodul
+	file_server
+
+	# Hasil `next build` dengan output: "export" adalah berkas statis biasa. Baris ini
+	# yang membuat URL dalam yang di-refresh tetap sampai ke halaman, bukan 404.
+	try_files {path} {path}/ /index.html
+
+	# Service worker lama harus selalu ditarik segar, kalau tidak perangkat yang
+	# terlanjur memasangnya bisa menyajikan salinan cache-nya sendiri berhari-hari
+	# dan tidak pernah sampai ke versi yang mencabut diri.
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache, no-store, must-revalidate"
+
+	encode zstd gzip
+}
+
+api.contoh.id {
+	# Kong pada stack self-host mendengarkan di 8000. Websocket untuk realtime
+	# diteruskan Caddy tanpa konfigurasi tambahan.
+	reverse_proxy localhost:8000
+}
