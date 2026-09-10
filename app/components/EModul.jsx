@@ -8,7 +8,7 @@ import { bootstrap, fetchDraft, fetchPublished, joinClass, publish, saveDraft, s
 import { hydrateProgress, pickProgress } from '../lib/progress';
 import { bankScore, createClass, essayScore, finalScore, gradeLkpd, gradeSubmission, listClasses, loadClassWork, toCsv, updateClass, watchClass } from '../lib/teacher';
 import {
-  CMS_KEY, SPEED, CMS_DEFAULTS, cloneCms,
+  SPEED, CMS_DEFAULTS, cloneCms,
   TYPES, TYPE_LABEL, TYPE_XP, LETTERS, seededPerm,
 } from './module-data';
 import SideNav from './SideNav';
@@ -255,17 +255,14 @@ export default class EModul extends React.Component {
   // point: the old panel wrote to localStorage, so a teacher's work never left the
   // laptop it was typed on. Writes are debounced because this fires on every keypress.
   persistCms(cms) {
-    if (this.state.role === 'guru' && configured) {
-      this.setState({ draftSaved: false });
-      clearTimeout(this._draftT);
-      this._draftT = setTimeout(() => {
-        saveDraft(cms)
-          .then(() => this.setState({ draftSaved: true }))
-          .catch((e) => this.toast(e.message));
-      }, 700);
-      return;
-    }
-    try { localStorage.setItem(CMS_KEY, JSON.stringify(cms)); } catch { this.toast('Gagal menyimpan konten di perangkat ini'); }
+    if (this.state.role !== 'guru' || !configured) return;
+    this.setState({ draftSaved: false });
+    clearTimeout(this._draftT);
+    this._draftT = setTimeout(() => {
+      saveDraft(cms)
+        .then(() => this.setState({ draftSaved: true }))
+        .catch((e) => this.toast(e.message));
+    }, 700);
   }
 
   // ── Teacher panel ──────────────────────────────────────────────────────────

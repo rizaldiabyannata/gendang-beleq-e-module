@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, JetBrains_Mono, Outfit } from "next/font/google";
 import "./globals.css";
-import ServiceWorkerRegistrar from "./sw-register";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -26,7 +25,6 @@ export const metadata: Metadata = {
   title: "E-Modul Gelombang Bunyi · Gendang Beleq",
   description:
     "E-modul Fisika Fase F tentang gelombang bunyi, dibangun di atas kearifan lokal Gendang Beleq Sasak.",
-  manifest: "./manifest.webmanifest",
   applicationName: "E-Modul Gelombang Bunyi",
 };
 
@@ -44,7 +42,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body>
         {children}
-        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
