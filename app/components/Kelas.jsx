@@ -50,17 +50,17 @@ export default function Kelas({ busy, classes, newName, onCreate, onNewName, onR
                       value={c.name} aria-label={'Nama kelas ' + c.name}
                       onChange={(e) => onRename(c.id, e.target.value)}
                       style={{
-                        width: 180, minHeight: 40, padding: '0 10px', color: 'var(--ink)',
+                        width: '100%', maxWidth: 240, minHeight: 44, padding: '0 10px', color: 'var(--ink)',
                         background: 'transparent', border: '1px solid transparent', borderRadius: 'var(--r-s)',
                         font: '600 15px/1 var(--font-outfit),sans-serif',
                       }}
                     />
                   </td>
-                  <td style={{ font: '600 15px/1 var(--font-jetbrains),ui-monospace,monospace', letterSpacing: '.1em', color: 'var(--gold-ink)' }}>
+                  <td data-label="Kode" style={{ font: '600 15px/1 var(--font-jetbrains),ui-monospace,monospace', letterSpacing: '.1em', color: 'var(--gold-ink)' }}>
                     {c.code}
                   </td>
-                  <td className="gb-num">{c.count}</td>
-                  <td className={c.is_open ? 'gb-pass' : 'gb-pending'}>
+                  <td className="gb-num" data-label="Siswa">{c.count}</td>
+                  <td data-label="Status" className={c.is_open ? 'gb-pass' : 'gb-pending'}>
                     {c.is_open ? 'Terbuka' : 'Ditutup'}
                   </td>
                   <td>

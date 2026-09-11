@@ -80,13 +80,13 @@ export default function Gradebook({ banks, classes, classId, loading, onClass, o
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td className="gb-sticky">{r.nama}</td>
-                  <td className="gb-num">{r.absen ?? '—'}</td>
+                  <td className="gb-num" data-label="Absen">{r.absen ?? '—'}</td>
                   {banks.map((b) => (
-                    <td key={b.id} className="gb-num">{mark(r.banks[b.id], b.kkm || 70)}</td>
+                    <td key={b.id} className="gb-num" data-label={b.title}>{mark(r.banks[b.id], b.kkm || 70)}</td>
                   ))}
-                  <td className="gb-num">{mark(r.lkpd, r.kkmModul)}</td>
-                  <td className="gb-num">{mark(r.esai, r.kkmModul)}</td>
-                  <td className="gb-num" style={{ fontWeight: 700 }}>{mark(r.akhir, r.kkmModul)}</td>
+                  <td className="gb-num" data-label="LKPD">{mark(r.lkpd, r.kkmModul)}</td>
+                  <td className="gb-num" data-label="Esai">{mark(r.esai, r.kkmModul)}</td>
+                  <td className="gb-num" data-label="Nilai akhir" style={{ fontWeight: 700 }}>{mark(r.akhir, r.kkmModul)}</td>
                 </tr>
               ))}
             </tbody>

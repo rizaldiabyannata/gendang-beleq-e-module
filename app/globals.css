@@ -62,6 +62,31 @@ textarea{resize:vertical}
   .gb-sidenav::-webkit-scrollbar-thumb{background:var(--panel-rule);border-color:var(--panel)}
 }
 
+/* ── Page header ──────────────────────────────────────────────────────────────
+   Back button, title, progress, mute — five things in one row. Below 480 that row
+   had 280px to spend and the title was getting 40 of them, so "Lab Simulasi" came
+   out as "Lab…" with the step label broken across three lines. The progress bar is
+   the one element there that says nothing the number beside it does not, so it is
+   what leaves when the row runs out of room. */
+.gb-head{position:sticky;top:0;z-index:40;border-bottom:1px solid var(--rule);
+  background:color-mix(in srgb,var(--paper) 93%,transparent);backdrop-filter:blur(12px)}
+.gb-head-in{display:flex;align-items:center;gap:16px;padding-top:14px;padding-bottom:14px}
+.gb-head-t{flex:1;min-width:0}
+.gb-head-k,.gb-head-h{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gb-head-k{font:500 12px/1 var(--font-outfit),sans-serif;color:var(--ink-3)}
+.gb-head-h{font-family:var(--font-instrument),serif;font-size:22px;line-height:1.15;
+  color:var(--ink);margin-top:4px}
+.gb-head-p{flex:none;display:flex;align-items:center;gap:12px}
+.gb-head-bar{width:64px;height:4px;border-radius:var(--r-full);background:var(--rule);overflow:hidden}
+.gb-head-btn{flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rule-2);border-radius:var(--r-m);background:transparent;
+  color:var(--ink-2);cursor:pointer}
+@media (max-width:479px){
+  .gb-head-in{gap:10px}
+  .gb-head-bar{display:none}
+  .gb-head-h{font-size:19px}
+}
+
 /* Keyboard users land here first; it stays out of the way until focused. */
 .gb-skip{position:absolute;left:-9999px;top:0;z-index:300}
 .gb-skip:focus{left:12px;top:12px;padding:11px 16px;background:var(--panel);color:var(--panel-ink);border-radius:var(--r-m);font:600 15px/1 var(--font-outfit),sans-serif;text-decoration:none}
@@ -121,6 +146,21 @@ textarea{resize:vertical}
 .gb-bench{display:grid;gap:24px;grid-template-columns:1fr}
 @media (min-width:900px){.gb-bench{grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:32px;align-items:start}}
 @media (min-width:1440px){.gb-bench{grid-template-columns:minmax(0,1fr) minmax(0,380px)}}
+
+/* ── Lab stage ────────────────────────────────────────────────────────────────
+   The drum is the one fixed-size object in the module. On a 320px phone it left
+   27px of gutter, and "Tabuh pinggir" and the drum's name were parked in that
+   gutter on top of the membrane. Under 560 the three stop competing for the same
+   rectangle and stack: drum, name, second button. */
+.gb-stage{position:relative;display:grid;place-items:center;
+  min-height:clamp(224px,26vw,300px);margin-bottom:10px}
+.gb-drum{position:relative;display:grid;place-items:center}
+.gb-stage-note{position:absolute;left:0;bottom:10px}
+.gb-stage-hit{position:absolute;right:0;bottom:10px}
+@media (max-width:559px){
+  .gb-stage{min-height:0;gap:14px;padding:6px 0 2px;text-align:center}
+  .gb-stage-note,.gb-stage-hit{position:static}
+}
 
 /* Glossary: a sheet from the bottom on touch, a centred dialog on desktop. */
 .gb-sheetwrap{position:fixed;inset:0;z-index:80;background:rgba(22,19,46,.55);
@@ -231,6 +271,10 @@ textarea{resize:vertical}
   letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
 .gb-table tbody tr:last-child td{border-bottom:none}
 .gb-table tbody tr:hover td{background:color-mix(in srgb,var(--gold) 7%,transparent)}
+/* A table never shrinks below its own content; the wrapper scrolls instead. Without
+   this the browser squeezed eight columns into 320px and rendered a bank title one
+   letter per line. */
+.gb-table{min-width:max-content}
 /* The name has to stay readable while the marks scroll past it. */
 .gb-table .gb-sticky{position:sticky;left:0;z-index:1;background:var(--raised);
   border-right:1px solid var(--rule);font-weight:600}
@@ -241,6 +285,30 @@ textarea{resize:vertical}
    into eight variations of "LATIHAN SOAL · KONSE…". They wrap instead. */
 .gb-table thead th.gb-wrap{white-space:normal;min-width:112px;max-width:168px;
   vertical-align:bottom;line-height:1.35}
+/* Below 768 a teacher is holding a phone, and sideways-scrolling a grid to read one
+   student is not reading. Each row becomes a card headed by the student's name, with
+   every mark on its own labelled line. Same markup, same data, one media query —
+   the labels come from the `data-label` the cells already carry. */
+@media (max-width:767px){
+  .gb-tablewrap{overflow:visible;border:none;background:transparent;border-radius:0}
+  .gb-table{min-width:0;width:100%;display:block}
+  .gb-table thead{display:none}
+  .gb-table tbody,.gb-table tr,.gb-table td{display:block;width:100%}
+  .gb-table tr{background:var(--raised);border:1px solid var(--rule);
+    border-radius:var(--r-l);padding:14px 16px;margin-bottom:12px}
+  .gb-table tbody tr:hover td{background:transparent}
+  .gb-table td{padding:7px 0;border-bottom:none;white-space:normal;
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+  .gb-table td[data-label]::before{content:attr(data-label);flex:1 1 auto;min-width:0;
+    text-align:left;overflow-wrap:anywhere;
+    font:600 12px/1.35 var(--font-jetbrains),ui-monospace,monospace;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .gb-table td.gb-sticky,.gb-table tbody tr:hover td.gb-sticky{position:static;display:block;
+    background:transparent;border-right:none;border-bottom:1px solid var(--rule);
+    padding:0 0 10px;margin-bottom:6px;font:600 17px/1.35 var(--font-outfit),sans-serif}
+  .gb-table td.gb-num{text-align:right}
+}
+
 .gb-pass{color:var(--ok)}
 .gb-fail{color:var(--warn)}
 .gb-pending{color:var(--ink-3)}
@@ -256,7 +324,9 @@ textarea{resize:vertical}
 /* Essay marking: one answer at a time, filling the column, because a teacher
    reading thirty of these should never have to hunt for where the text starts. */
 .gb-mark{display:grid;gap:20px;grid-template-columns:1fr}
-@media (min-width:1024px){.gb-mark{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:32px;align-items:start}}
+@media (min-width:900px){.gb-mark{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:32px;align-items:start}}
+/* Keys 0-9 score an essay. A phone has no keys, so the hint does not ship there. */
+@media (hover:none){.gb-keyhint{display:none}}
 .gb-quote{margin:0;padding:16px 18px;border-left:3px solid var(--gold);
   background:var(--raised);border-radius:0 var(--r-m) var(--r-m) 0;
   font:400 16px/1.7 var(--font-outfit),sans-serif;white-space:pre-wrap;text-wrap:pretty}
@@ -294,6 +364,21 @@ textarea{resize:vertical}
 .gb-rte-mark{background:var(--gold-soft);padding:0 3px;border-radius:3px}
 .gb-rte-sep{width:1px;height:20px;margin:0 4px;background:var(--rule-2);flex:none}
 .gb-rte-push{margin-left:auto;background:transparent}
+
+/* Twenty buttons at 34px is 700px of toolbar. On a desk that is one row; on a phone
+   it was three stacked rows sitting above a one-line field. It scrolls sideways
+   instead, and grows to a real touch target the moment the pointer is a finger —
+   which is the actual condition, not the screen width. */
+@media (max-width:767px){
+  .gb-rte-bar{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .gb-rte-bar::-webkit-scrollbar{display:none}
+  .gb-rte-btn,.gb-rte-sep{flex:none}
+  .gb-rte-push{margin-left:0}
+}
+@media (pointer:coarse){
+  .gb-rte-btn{min-width:42px;height:42px}
+  .gb-rte-sep{height:24px}
+}
 
 .gb-rte-body{padding:12px;min-height:var(--gb-rte-min,120px);outline:none;
   font:400 15px/1.65 var(--font-outfit),sans-serif;color:var(--ink);
@@ -349,6 +434,20 @@ textarea{resize:vertical}
 @media (min-width:1440px){.gb-adm-bar{margin-left:-72px;margin-right:-72px;padding-left:72px;padding-right:72px}}
 
 .gb-adm-groups{display:flex;gap:8px 28px;flex-wrap:wrap;align-items:flex-end}
+/* Three stacked groups is 250px of sticky navigation — most of a phone screen, held
+   there permanently. Under 768 the eight destinations become one sideways-scrolling
+   row; the group headings are a desk luxury and a rule between groups carries the
+   same grouping in a tenth of the height. */
+@media (max-width:767px){
+  .gb-adm-bar{padding-top:10px;padding-bottom:10px}
+  .gb-adm-groups{flex-wrap:nowrap;overflow-x:auto;gap:0;align-items:center;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .gb-adm-groups::-webkit-scrollbar{display:none}
+  .gb-adm-group{flex:none;flex-direction:row;gap:6px}
+  .gb-adm-group > span{display:none}
+  .gb-adm-group > div{flex-wrap:nowrap}
+  .gb-adm-group + .gb-adm-group{margin-left:14px;padding-left:14px;border-left:1px solid var(--rule)}
+}
 .gb-adm-group{display:flex;flex-direction:column;gap:7px;min-width:0}
 .gb-adm-group > span{font:500 12px/1 var(--font-jetbrains),ui-monospace,monospace;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
@@ -369,6 +468,10 @@ textarea{resize:vertical}
 .gb-adm-short{display:grid;gap:16px;grid-template-columns:1fr}
 @media (min-width:900px){.gb-adm-short{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .gb-adm-stack{display:flex;flex-direction:column;gap:20px}
+/* A grid or flex child sizes to its content's minimum unless told otherwise, and the
+   editor toolbar's minimum is now one unwrapped row of twenty buttons. Without this
+   the toolbar stretches the card it sits in and the whole panel scrolls sideways. */
+.gb-adm-card,.gb-adm-short > *,.gb-adm-stack > *{min-width:0}
 
 /* Buttons carry body-sized labels. A 48px button with 12px text reads as a mistake,
    and every one of them had 12px text. */

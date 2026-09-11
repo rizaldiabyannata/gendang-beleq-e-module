@@ -4,7 +4,7 @@ import { sx } from './sx';
 const SEC = "margin-top:36px;padding-top:24px;border-top:1px solid var(--rule)";
 const H = "margin:0 0 14px;font:600 13px/1 var(--font-jetbrains),ui-monospace,monospace;letter-spacing:.12em;color:var(--ink-3);text-transform:uppercase";
 const AREA = "width:100%;border:1.5px solid var(--rule-2);border-radius:var(--r-m);padding:14px;font:400 16px/1.7 var(--font-outfit),sans-serif;background:var(--paper);color:var(--ink)";
-const IDENT = "flex:1;min-width:0;min-height:48px;border:1.5px solid var(--rule-2);border-radius:var(--r-m);padding:0 14px;font:400 16px/1 var(--font-outfit),sans-serif;background:var(--paper);color:var(--ink)";
+const IDENT = "flex:1 1 180px;min-width:0;min-height:48px;border:1.5px solid var(--rule-2);border-radius:var(--r-m);padding:0 14px;font:400 16px/1 var(--font-outfit),sans-serif;background:var(--paper);color:var(--ink)";
 
 export default function Lkpd({ v }) {
   const { kirimLkpd, literasiSoal, literasiTeks, lkpdAlat, lkpdBtnLabel, lkpdFenomena, lkpdFixed, lkpdH, lkpdLangkah, lkpdNote, lkpdPemantik, lkpdSent, lkpdSoal, lkpdTabs, lkpdTitle, lkpdV, tableHint, tableRows } = v;

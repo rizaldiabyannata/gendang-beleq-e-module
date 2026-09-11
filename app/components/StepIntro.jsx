@@ -6,9 +6,9 @@ export default function StepIntro({ v }) {
   if (!showStepNav) return null;
   return (
     <div className="gb-pad" style={sx("padding-top:36px")}>
-      <div style={sx("display:flex;justify-content:space-between;align-items:baseline;gap:16px;font:500 12px/1 var(--font-jetbrains),ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;max-width:640px")}>
-        <span style={sx("color:var(--gold-ink)")}>{stepLabel}</span>
-        <span style={sx("color:var(--ink-3)")}>{stepPhase}</span>
+      <div style={sx("display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:5px 16px;font:500 12px/1.3 var(--font-jetbrains),ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;max-width:640px")}>
+        <span style={sx("color:var(--gold-ink);white-space:nowrap")}>{stepLabel}</span>
+        <span style={sx("color:var(--ink-3);white-space:nowrap")}>{stepPhase}</span>
       </div>
       <div aria-hidden="true" style={sx("display:flex;gap:4px;margin:12px 0 24px;max-width:640px")}>
         {(stepDots || []).map((d, dI) => <div key={dI} style={sx(d.style)}></div>)}

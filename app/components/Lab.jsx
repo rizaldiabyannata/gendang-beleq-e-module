@@ -3,7 +3,7 @@ import { sx } from './sx';
 import Rich from './Rich';
 
 const PANEL = "background:var(--panel);border-radius:var(--r-l);padding:22px;color:var(--panel-ink)";
-const READOUT = "font:500 15px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold)";
+const READOUT = "font:500 15px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold);white-space:nowrap";
 
 // The mission list that sits beside each simulation. A student picks a mission, the
 // bench jumps to its conditions, and the one knob under test freezes until the guess
@@ -101,21 +101,23 @@ export default function Lab({ v }) {
               <span style={sx("font:500 30px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold)")}>{dbValue}</span>
               <span style={sx("font:500 13px/1.3 var(--font-outfit),sans-serif;color:var(--panel-ink-2)")}>dB · taraf intensitas</span>
             </div>
-            <div style={sx("position:relative;display:flex;justify-content:center;align-items:center;height:clamp(224px,26vw,300px);margin-bottom:10px")}>
-              <div aria-hidden="true" style={sx(ringStyle)}></div>
-              <button onClick={hitTengah} aria-label={"Tabuh " + drumLabel + " di titik tengah"} style={sx(drumOuterStyle)}>
-                <span style={sx(drumSkinStyle)}>
-                  <span style={sx(drumCenterStyle)}>
-                    <span style={sx("font:500 12px/1 var(--font-outfit),sans-serif;color:rgba(22,19,46,.6);text-align:center;pointer-events:none")}>Tengah</span>
+            <div className="gb-stage">
+              <div className="gb-drum">
+                <div aria-hidden="true" style={sx(ringStyle)}></div>
+                <button onClick={hitTengah} aria-label={"Tabuh " + drumLabel + " di titik tengah"} style={sx(drumOuterStyle)}>
+                  <span style={sx(drumSkinStyle)}>
+                    <span style={sx(drumCenterStyle)}>
+                      <span style={sx("font:500 12px/1 var(--font-outfit),sans-serif;color:rgba(22,19,46,.6);text-align:center;pointer-events:none")}>Tengah</span>
+                    </span>
                   </span>
-                </span>
-              </button>
-              <button onClick={hitPinggir} style={sx("position:absolute;right:0;bottom:10px;min-height:44px;padding:0 16px;border:1px solid var(--panel-rule);border-radius:var(--r-m);background:transparent;color:var(--panel-ink);font:500 15px/1 var(--font-outfit),sans-serif;cursor:pointer")}>Tabuh pinggir</button>
-              <div style={sx("position:absolute;left:0;bottom:10px;font:400 13px/1.5 var(--font-outfit),sans-serif;color:var(--panel-ink-2)")}>{drumLabel}<br />{hitLabel}</div>
+                </button>
+              </div>
+              <div className="gb-stage-note" style={sx("font:400 13px/1.5 var(--font-outfit),sans-serif;color:var(--panel-ink-2)")}>{drumLabel}<br />{hitLabel}</div>
+              <button onClick={hitPinggir} className="gb-stage-hit" style={sx("min-height:44px;padding:0 16px;border:1px solid var(--panel-rule);border-radius:var(--r-m);background:transparent;color:var(--panel-ink);font:500 15px/1 var(--font-outfit),sans-serif;cursor:pointer")}>Tabuh pinggir</button>
             </div>
 
             <div style={sx("background:var(--panel-2);border-radius:var(--r-m);padding:14px 16px 8px;margin-bottom:20px")}>
-              <div style={sx("display:flex;justify-content:space-between;gap:12px;font:500 13px/1 var(--font-outfit),sans-serif;color:var(--panel-ink-2);margin-bottom:10px")}><span>Osiloskop</span><span style={sx(READOUT)}>{waveInfo}</span></div>
+              <div style={sx("display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;font:500 13px/1 var(--font-outfit),sans-serif;color:var(--panel-ink-2);margin-bottom:10px")}><span>Osiloskop</span><span style={sx(READOUT)}>{waveInfo}</span></div>
               <canvas ref={waveRef} role="img" aria-label={"Osiloskop bentuk gelombang: " + waveInfo} width="760" height="240" style={sx("width:100%;height:clamp(124px,14vw,168px);display:block")}></canvas>
             </div>
             </div>

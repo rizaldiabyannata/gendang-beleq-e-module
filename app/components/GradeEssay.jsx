@@ -29,7 +29,7 @@ export default function GradeEssay({ busy, index, item, note, onBack, onNote, on
       <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: 16 }}>
         <button type="button" className="gb-btn gb-btn-2 gb-btn-sm" onClick={onBack}>‹ Daftar nilai</button>
         <span className="gb-eyebrow">Esai {index + 1} dari {total}</span>
-        <span className="gb-note" style={{ marginLeft: 'auto' }}>
+        <span className="gb-note gb-keyhint" style={{ marginLeft: 'auto' }}>
           Tekan 1–9 untuk memberi nilai, 0 untuk 100, Enter untuk menyimpan.
         </span>
       </div>
