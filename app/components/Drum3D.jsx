@@ -9,6 +9,10 @@ import { sx } from './sx';
 
 const Panggung3D = dynamic(() => import('./Panggung3D'), { ssr: false });
 
+// Cached across mounts so the probe's throwaway canvas is only created once —
+// each WebGL context otherwise counts toward Chrome's ~16-context ceiling.
+let webgl2Tersedia;
+
 const TOMBOL = "min-height:44px;padding:0 16px;border:1px solid var(--panel-rule);border-radius:var(--r-m);background:transparent;color:var(--panel-ink);font:500 15px/1 var(--font-outfit),sans-serif;cursor:pointer";
 
 class Jaga extends Component {
@@ -23,14 +27,18 @@ export default function Drum3D({ drum, amp, frek, speed, onHit, bangun }) {
   const [siap, setSiap] = useState(false);
   // R3F v9 creates its WebGLRenderer inside an async configure() nobody awaits, so a
   // missing WebGL context becomes an unhandled rejection the Jaga boundary never sees.
-  // Probe once, lazily, so it never runs during SSR (no `document`); on a device that
-  // does lack WebGL this reruns the initializer during hydration and briefly disagrees
-  // with the server markup, which React self-corrects — Jaga still catches errors that
-  // do reach it (GLB load, chunk load).
+  // three r163+ also throws if only WebGL1 is available, so the probe must require
+  // webgl2 specifically. Probe once, lazily, so it never runs during SSR (no
+  // `document`); EModul's initial screen is 'home' and Lab only renders on the lab
+  // screen, so Drum3D is never part of the static-export HTML and always mounts
+  // client-side after hydration — this initializer never reruns then. Jaga still
+  // catches errors that do reach it (GLB load, chunk load).
   const [rusak, setRusak] = useState(() => {
+    if (webgl2Tersedia !== undefined) return !webgl2Tersedia;
     if (typeof document === 'undefined') return false;
     const c = document.createElement('canvas');
-    return !(c.getContext('webgl2') || c.getContext('webgl'));
+    webgl2Tersedia = !!c.getContext('webgl2');
+    return !webgl2Tersedia;
   });
   const lat = useRef(null);
 
@@ -50,7 +58,7 @@ export default function Drum3D({ drum, amp, frek, speed, onHit, bangun }) {
     <div className="gb-drum3d">
       {rusak ? (
         <p className="gb-kanvas" style={sx("display:grid;place-items:center;margin:0;padding:0 16px;text-align:center;font:400 15px/1.5 var(--font-outfit),sans-serif;color:var(--panel-ink-2)")}>
-          Model 3D tidak dapat ditampilkan di perangkat ini. Tabuh lewat tombol di bawah.
+          Model 3D tidak dapat ditampilkan di perangkat ini. Tabuh lewat tombol Tabuh tengah atau Tabuh pinggir.
         </p>
       ) : (
         <div className="gb-kanvas" role="img" aria-label="Model 3D Gendang Beleq dan pemukulnya. Klik atau ketuk bagian tengah atau pinggir membran untuk menabuh.">

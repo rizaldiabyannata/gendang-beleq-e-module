@@ -66,7 +66,10 @@ function Gendang({ drum, minta, lat, onSiap }) {
   useEffect(() => {
     const root = scene.getObjectByName('gendang_beleq');
     const head = root.getObjectByName('head_top');
-    bag.current = { root, head, headY: head.position.y, stick: root.getObjectByName('drumstick') };
+    // scene comes from useLoader's shared cache, so a remount mid-bounce would
+    // otherwise capture the displaced height as the new rest height.
+    if (head.userData.y0 === undefined) head.userData.y0 = head.position.y;
+    bag.current = { root, head, stick: root.getObjectByName('drumstick') };
     pasang(bag.current.stick, gerak.current.g, PHI.istirahat);
     onSiap();
     invalidate();
@@ -123,8 +126,8 @@ function Gendang({ drum, minta, lat, onSiap }) {
     // Membran melesak sesaat lalu bergetar teredam, sebanding dengan amplitudo.
     if (m.pantul) {
       const t = now - m.pantul.t0;
-      b.head.position.y = b.headY - 0.004 * m.pantul.amp * Math.exp(-t * 14) * Math.cos(t * 70);
-      if (t < 0.4) hidup = true; else { b.head.position.y = b.headY; m.pantul = null; }
+      b.head.position.y = b.head.userData.y0 - 0.004 * m.pantul.amp * Math.exp(-t * 14) * Math.cos(t * 70);
+      if (t < 0.4) hidup = true; else { b.head.position.y = b.head.userData.y0; m.pantul = null; }
     }
 
     if (hidup) invalidate();
@@ -159,7 +162,7 @@ function Gendang({ drum, minta, lat, onSiap }) {
 export default function Panggung3D({ drum, minta, lat, onSiap }) {
   return (
     <Canvas frameloop="demand" dpr={[1, 2]} camera={KAMERA} gl={{ alpha: true, antialias: true }}
-      style={{ touchAction: 'pan-y', cursor: 'pointer' }}
+      style={{ touchAction: 'pan-y pinch-zoom', cursor: 'pointer' }}
       onCreated={({ camera }) => camera.lookAt(PANDANG[0], PANDANG[1], PANDANG[2])}>
       <hemisphereLight args={['#fff4e0', '#3a2a1a', 1.6]} />
       <directionalLight position={[0.6, 1.4, 0.8]} intensity={2.2} />
