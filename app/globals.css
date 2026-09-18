@@ -165,6 +165,14 @@ textarea{resize:vertical}
   .gb-stage-hit{justify-content:center;margin-top:10px}
   .gb-stage-note{margin-top:14px;text-align:center}
 }
+/* Safari < 16 / Firefox < 110 ignore @container: at least stack on phones there. */
+@supports not (container-type:inline-size){
+  @media (max-width:559px){
+    .gb-stage{gap:14px;padding:6px 0 2px;text-align:center}
+    .gb-stage-note,.gb-stage-hit{position:static}
+    .gb-stage-hit{justify-content:center;flex-wrap:wrap;margin-top:10px}
+  }
+}
 
 /* Glossary: a sheet from the bottom on touch, a centred dialog on desktop. */
 .gb-sheetwrap{position:fixed;inset:0;z-index:80;background:rgba(22,19,46,.55);
