@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {
   DEFAULTS, MIN_VISIBLE, SAMPLE_HZ, UNIT, arahBenar, arahUji, beat, dbLevel, dopplerHeard,
-  nudge, observe, paramsFor, pitch, sampleRate, seeded, selisih, siapkan, terlihat,
+  nudge, observe, paramsFor, passMix, pitch, sampleRate, seeded, selisih, siapkan, terlihat,
 } from '../../supabase/functions/_shared/physics.ts';
 import { CMS_DEFAULTS } from '../../content/defaults.mjs';
 
@@ -37,6 +37,11 @@ assert.ok(dopplerHeard(dop, 0.5) < 400);
 assert.equal(Math.round(dopplerHeard(dop, 0)), 400);
 // Faster procession, bigger shift.
 assert.ok(dopplerHeard(P({ dopF: 400, dopV: 20 }), -0.5) > dopplerHeard(dop, -0.5));
+
+// The recording is loudest as the procession passes and pans from left to right.
+assert.equal(passMix(0).gain, 1);
+assert.ok(passMix(-1).gain < 0.5 && passMix(1).gain < 0.5);
+assert.ok(passMix(-1).pan < -0.9 && passMix(1).pan > 0.9);
 
 assert.equal(beat(164, 160), 4);
 assert.equal(beat(160, 164), 4);

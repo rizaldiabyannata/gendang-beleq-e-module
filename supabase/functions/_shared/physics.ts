@@ -71,11 +71,19 @@ export function dbLevel(p: Params, zone: Zone = p.zone): number {
 
 // The procession passes the listener at a distance rather than running them over,
 // so only the component of its velocity along the line of sight shifts the pitch.
+export const PASS_D = 0.45;
+
 export function dopplerHeard(p: Params, pos: number): number {
   const v = 343;
-  const d = 0.45;
-  const radial = p.dopV * (-pos) / Math.sqrt(pos * pos + d * d);
+  const radial = p.dopV * (-pos) / Math.hypot(pos, PASS_D);
   return p.dopF * v / (v - radial);
+}
+
+// Where the procession sits as heard, for the recording in public/doppler.wav:
+// amplitude falls as 1/r (intensity as 1/r²), and the stereo pan follows the angle.
+export function passMix(pos: number): { gain: number; pan: number } {
+  const r = Math.hypot(pos, PASS_D);
+  return { gain: PASS_D / r, pan: pos / r };
 }
 
 export function beat(f1: number, f2: number): number {

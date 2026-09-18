@@ -5,7 +5,7 @@ import { sx } from './sx';
 import { configured, errText, supabase } from '../lib/supabase';
 import { teks, validate } from '../../supabase/functions/_shared/grading.ts';
 import {
-  dbLevel, dopplerHeard as dopplerOf, pitch as pitchOf, sampleRate, siapkan,
+  dbLevel, dopplerHeard as dopplerOf, passMix, pitch as pitchOf, sampleRate, siapkan,
 } from '../../supabase/functions/_shared/physics.ts';
 import { bootstrap, fetchDraft, fetchPublished, joinClass, publish, saveDraft, saveProgress, signOut, teacherSignIn } from '../lib/session';
 import { hydrateProgress, pickProgress } from '../lib/progress';
@@ -73,7 +73,8 @@ export default class EModul extends React.Component {
       this.raf = requestAnimationFrame(this.loop);
     };
     this.ensureLoop();
-    this.loadDrum();
+    this.loadSample('gendang.wav').then((b) => { this._drum = b; });
+    this.loadSample('doppler.wav').then((b) => { this._dopBuf = b; });
   }
 
   // public/gendang.wav adalah 130 ms tabuhan Gendang Mame sungguhan, dipotong dari
@@ -83,14 +84,18 @@ export default class EModul extends React.Component {
   //
   // Dibaca lewat OfflineAudioContext supaya tidak perlu menunggu sentuhan siswa dan
   // sudah siap sebelum tabuhan pertama. Kalau gagal, hit() tetap berbunyi tanpa ini.
-  async loadDrum() {
+  //
+  // public/doppler.wav adalah 8 detik rekaman rombongan gendang (detik 76–84 rekaman
+  // asli, mono). Itulah yang didengar saat rombongan melintas; kalau gagal dimuat,
+  // simulasi Doppler kembali ke osilator.
+  async loadSample(url) {
     try {
-      const res = await fetch('gendang.wav');
-      if (!res.ok) return;
+      const res = await fetch(url);
+      if (!res.ok) return null;
       const bytes = await res.arrayBuffer();
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-      this._drum = await new OAC(1, 1, 44100).decodeAudioData(bytes);
-    } catch { this._drum = null; }
+      return await new OAC(1, 1, 44100).decodeAudioData(bytes);
+    } catch { return null; }
   }
   // The loop only needs to run while the oscilloscope is on screen or the Doppler is
   // moving. It used to wake the main thread 60 times a second for the whole session.
@@ -499,7 +504,7 @@ export default class EModul extends React.Component {
       const C = window.AudioContext || window.webkitAudioContext;
       this._ac = new C();
       // Everything routes through one master gain, so the mute button silences the
-      // drum and the Doppler oscillator alike — a classroom of thirty phones needs it.
+      // drum and the Doppler recording alike — a classroom of thirty phones needs it.
       this._master = this._ac.createGain();
       this._master.gain.value = this.state.muted ? 0 : 1;
       this._master.connect(this._ac.destination);
@@ -627,15 +632,45 @@ export default class EModul extends React.Component {
     ctx.stroke();
   }
 
+  // The recording plays at heard/dopF, so its pitch moves by exactly the Doppler
+  // ratio the readout shows. The source slider only changes the number, not the
+  // recording. Loudness and pan follow the procession's position.
   startDop() {
+    this.stopDop();
     const ctx = this.ac();
-    this._dg = ctx.createGain(); this._dg.gain.value = 0.12;
-    this._do = ctx.createOscillator(); this._do.type = 'triangle';
-    this._do.frequency.value = this.state.dopF;
-    this._do.connect(this._dg); this._dg.connect(this.out()); this._do.start();
+    this._dg = ctx.createGain(); this._dg.gain.value = 0;
+    this._dp = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    if (this._dopBuf) {
+      this._do = ctx.createBufferSource(); this._do.buffer = this._dopBuf;
+    } else {
+      this._do = ctx.createOscillator(); this._do.type = 'triangle';
+    }
+    this._do.connect(this._dg);
+    if (this._dp) { this._dg.connect(this._dp); this._dp.connect(this.out()); } else this._dg.connect(this.out());
+    this.mixDop(-1);
+    this._do.start();
+  }
+  mixDop(pos) {
+    if (!this._do) return;
+    const heard = dopplerOf(this.state, pos), mix = passMix(pos);
+    if (this._do.playbackRate) this._do.playbackRate.value = heard / this.state.dopF;
+    else this._do.frequency.value = heard;
+    // 0.5 is the mix level for the recording; the oscillator is far harsher at 0.12.
+    this._dg.gain.value = (this._dopBuf ? 0.5 : 0.12) * mix.gain;
+    if (this._dp) this._dp.pan.value = mix.pan;
   }
   stopDop() {
-    try { if (this._do) { this._do.stop(); this._do.disconnect(); this._do = null; } } catch {}
+    const o = this._do, g = this._dg;
+    this._do = null; this._dg = null; this._dp = null;
+    if (!o) return;
+    // A 60 ms fade instead of a hard stop, which clicks on a recording mid-waveform.
+    try {
+      const t = o.context.currentTime;
+      g.gain.setValueAtTime(g.gain.value, t);
+      g.gain.linearRampToValueAtTime(0, t + 0.06);
+      o.stop(t + 0.07);
+      o.onended = () => g.disconnect();
+    } catch {}
   }
   dopplerHeard(pos) { return Math.round(dopplerOf(this.state, pos)); }
 
@@ -649,7 +684,7 @@ export default class EModul extends React.Component {
       return;
     }
     this._dopPos = pos;
-    if (this._do) this._do.frequency.value = heard;
+    this.mixDop(pos);
     // Written straight to the DOM. Driving this through setState re-ran renderVals()
     // — the whole view model for all nine screens — 353 times per run.
     this.paintDoppler(pos, heard);
