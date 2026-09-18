@@ -90,7 +90,6 @@ export default function RichText({ value, onChange, simple, label, minHeight, pl
       onMouseDown={(e) => e.preventDefault()} onClick={run}>{body}</button>
   );
 
-  const c = editor.chain().focus();
   const tools = [
     btn('b', 'Tebal', <b>B</b>, () => editor.chain().focus().toggleBold().run(), editor.isActive('bold')),
     btn('i', 'Miring', <i>I</i>, () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic')),
@@ -135,7 +134,6 @@ export default function RichText({ value, onChange, simple, label, minHeight, pl
     btn('undo', 'Batalkan', '↺', () => editor.chain().focus().undo().run(), false),
     btn('redo', 'Ulangi', '↻', () => editor.chain().focus().redo().run(), false),
   );
-  void c;
 
   return (
     <div className={'gb-rte' + (simple ? ' is-simple' : '')}>
