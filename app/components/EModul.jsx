@@ -948,10 +948,6 @@ export default class EModul extends React.Component {
         + (st.medium === k ? 'border:1px solid transparent;background:var(--panel-ink);color:var(--panel)' : 'border:1px solid var(--panel-rule);background:transparent;color:var(--panel-ink-2)')
     }));
 
-    // A length, not a number: the ring around it scales to 1.5x when struck, and at
-    // 172px that ring was wider than the bench on a 320px phone.
-    const drumSize = st.drum === 'mame' ? 'min(172px,44vw)' : 'min(138px,36vw)';
-    const pressed = this.env > 0.35;
     const dbNow = Math.round(st.db * (0.35 + 0.65 * Math.min(1, this.env + 0.001)) || 0);
 
     const letters = LETTERS;
@@ -1614,11 +1610,13 @@ export default class EModul extends React.Component {
       drumLabel: st.drum === 'mame' ? 'GENDANG MAME' : 'GENDANG NINE',
       hitLabel: 'tabuhan: ' + st.lastHit,
       waveInfo: Math.round(this.pitch('tengah')) + ' Hz · A ' + Math.round(st.amp * 100) + '%',
-      hitTengah: () => this.hit('tengah'), hitPinggir: () => this.hit('pinggir'),
-      drumOuterStyle: 'width:' + drumSize + ';height:' + drumSize + ';border-radius:50%;border:none;cursor:pointer;padding:0;background:conic-gradient(from 210deg,#7d5127,#c08344,#5f3b1b,#c08344,#7d5127);box-shadow:0 14px 34px rgba(10,8,24,.45);display:flex;align-items:center;justify-content:center;transition:transform .12s ease;transform:scale(' + (pressed ? 0.965 : 1) + ')',
-      drumSkinStyle: 'width:86%;height:86%;border-radius:50%;background:radial-gradient(circle at 38% 32%,#fdf3df,#e6d0a8 62%,#c9ab7c);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 3px 10px rgba(0,0,0,.2)',
-      drumCenterStyle: 'width:' + (46 + st.amp * 26) + '%;height:' + (46 + st.amp * 26) + '%;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(28,24,64,.16),rgba(28,24,64,.05));display:flex;align-items:center;justify-content:center;transition:all .15s ease',
-      ringStyle: 'position:absolute;width:' + drumSize + ';height:' + drumSize + ';border-radius:50%;border:3px solid var(--gold);opacity:' + (this.env * 0.5).toFixed(2) + ';transform:scale(' + (1 + (1 - this.env) * 0.5).toFixed(2) + ');pointer-events:none',
+      // The 3D drum calls hit() at the instant the stick head meets the membrane, so
+      // the sound, the dB readout and the oscilloscope still come from one place.
+      drum3d: {
+        drum: st.drum, amp: st.amp, speed: SPEED[st.medium],
+        frek: { tengah: this.pitch('tengah'), pinggir: this.pitch('pinggir') },
+        onHit: (this.hitZone = this.hitZone || ((z) => this.hit(z))),
+      },
       mediumInfo: 'Cepat rambat ≈ ' + SPEED[st.medium] + ' m/s. ' + (st.medium === 'udara' ? 'Bunyi paling akrab kita dengar di udara.' : st.medium === 'air' ? 'Di air bunyi merambat lebih cepat, tapi warnanya terdengar lebih redup.' : 'Di zat padat bunyi paling cepat merambat karena partikelnya paling rapat.'),
       // The findings used to be printed here in full, which left a student nothing
       // to find. Each line is now the discussion note of the mission that proves it,

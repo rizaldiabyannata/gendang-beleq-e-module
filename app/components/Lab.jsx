@@ -1,6 +1,7 @@
 import React from 'react';
 import { sx } from './sx';
 import Rich from './Rich';
+import Drum3D from './Drum3D';
 
 const PANEL = "background:var(--panel);border-radius:var(--r-l);padding:22px;color:var(--panel-ink)";
 const READOUT = "font:500 15px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold);white-space:nowrap";
@@ -69,7 +70,7 @@ function Misi({ misi, misiLabel, dark }) {
 }
 
 export default function Lab({ v }) {
-  const { labAnsambel, ansSliders, ansBeat, ansBeatLabel, ansPulseStyle, ansBtnLabel, ansPlay, ansHint, dopSourceRef, dopWaveRef, dopHeardRef, dbValue, dopBtnLabel, dopHeard, dopReset, dopSliders, dopSourceStyle, dopStatus, dopStatusColor, dopToggle, dopWaveStyle, drumCenterStyle, drumLabel, drumOpts, drumOuterStyle, drumSkinStyle, hitLabel, hitPinggir, hitTengah, labDoppler, labDrum, labTabs, mediumInfo, mediumOpts, misi, misiLabel, ringStyle, sliders, temuan, temuanLabel, waveInfo, waveRef } = v;
+  const { labAnsambel, ansSliders, ansBeat, ansBeatLabel, ansPulseStyle, ansBtnLabel, ansPlay, ansHint, dopSourceRef, dopWaveRef, dopHeardRef, dbValue, dopBtnLabel, dopHeard, dopReset, dopSliders, dopSourceStyle, dopStatus, dopStatusColor, dopToggle, dopWaveStyle, drum3d, drumLabel, drumOpts, hitLabel, labDoppler, labDrum, labTabs, mediumInfo, mediumOpts, misi, misiLabel, sliders, temuan, temuanLabel, waveInfo, waveRef } = v;
 
   const slider = (s, sI, accent) => (
     <div key={sI} style={sx(s.locked ? "opacity:.5" : "")}>
@@ -102,18 +103,8 @@ export default function Lab({ v }) {
               <span style={sx("font:500 13px/1.3 var(--font-outfit),sans-serif;color:var(--panel-ink-2)")}>dB · taraf intensitas</span>
             </div>
             <div className="gb-stage">
-              <div className="gb-drum">
-                <div aria-hidden="true" style={sx(ringStyle)}></div>
-                <button onClick={hitTengah} aria-label={"Tabuh " + drumLabel + " di titik tengah"} style={sx(drumOuterStyle)}>
-                  <span style={sx(drumSkinStyle)}>
-                    <span style={sx(drumCenterStyle)}>
-                      <span style={sx("font:500 12px/1 var(--font-outfit),sans-serif;color:rgba(22,19,46,.6);text-align:center;pointer-events:none")}>Tengah</span>
-                    </span>
-                  </span>
-                </button>
-              </div>
+              <Drum3D {...drum3d} />
               <div className="gb-stage-note" style={sx("font:400 13px/1.5 var(--font-outfit),sans-serif;color:var(--panel-ink-2)")}>{drumLabel}<br />{hitLabel}</div>
-              <button onClick={hitPinggir} className="gb-stage-hit" style={sx("min-height:44px;padding:0 16px;border:1px solid var(--panel-rule);border-radius:var(--r-m);background:transparent;color:var(--panel-ink);font:500 15px/1 var(--font-outfit),sans-serif;cursor:pointer")}>Tabuh pinggir</button>
             </div>
 
             <div style={sx("background:var(--panel-2);border-radius:var(--r-m);padding:14px 16px 8px;margin-bottom:20px")}>

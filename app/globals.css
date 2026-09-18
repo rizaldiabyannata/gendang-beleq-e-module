@@ -148,18 +148,18 @@ textarea{resize:vertical}
 @media (min-width:1440px){.gb-bench{grid-template-columns:minmax(0,1fr) minmax(0,380px)}}
 
 /* ── Lab stage ────────────────────────────────────────────────────────────────
-   The drum is the one fixed-size object in the module. On a 320px phone it left
-   27px of gutter, and "Tabuh pinggir" and the drum's name were parked in that
-   gutter on top of the membrane. Under 560 the three stop competing for the same
-   rectangle and stack: drum, name, second button. */
-.gb-stage{position:relative;display:grid;place-items:center;
-  min-height:clamp(224px,26vw,300px);margin-bottom:10px}
-.gb-drum{position:relative;display:grid;place-items:center}
+   The 3D drum fills the bench width at a fixed-ratio height, with the drum's name
+   and the two strike buttons laid over its bottom corners. Under 560 the three
+   stop sharing one rectangle and stack: drum, buttons, name. */
+.gb-stage{position:relative;display:grid;place-items:center;margin-bottom:10px}
+.gb-drum3d{position:relative;width:100%}
+.gb-kanvas{width:100%;height:clamp(240px,32vw,340px)}
 .gb-stage-note{position:absolute;left:0;bottom:10px}
 .gb-stage-hit{position:absolute;right:0;bottom:10px}
 @media (max-width:559px){
-  .gb-stage{min-height:0;gap:14px;padding:6px 0 2px;text-align:center}
+  .gb-stage{gap:14px;padding:6px 0 2px;text-align:center}
   .gb-stage-note,.gb-stage-hit{position:static}
+  .gb-stage-hit{justify-content:center;margin-top:10px}
 }
 
 /* Glossary: a sheet from the bottom on touch, a centred dialog on desktop. */
