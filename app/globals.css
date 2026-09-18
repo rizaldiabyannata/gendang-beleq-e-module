@@ -149,17 +149,21 @@ textarea{resize:vertical}
 
 /* ── Lab stage ────────────────────────────────────────────────────────────────
    The 3D drum fills the bench width at a fixed-ratio height, with the drum's name
-   and the two strike buttons laid over its bottom corners. Under 560 the three
-   stop sharing one rectangle and stack: drum, buttons, name. */
-.gb-stage{position:relative;display:grid;place-items:center;margin-bottom:10px}
+   and the two strike buttons laid over its bottom corners. When the stage itself is
+   narrower than 680 (phones, and the two-column bench beside the sidebar up to
+   ~1450) those corners would sit on the drum, so the three stack instead: drum,
+   buttons, name. The minmax(0,…) column lets the stage shrink: R3F sizes its
+   <canvas> in px, which an auto column would otherwise hold at its last (or
+   default 300px) width. */
+.gb-stage{position:relative;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;margin-bottom:10px;container-type:inline-size}
 .gb-drum3d{position:relative;width:100%}
 .gb-kanvas{width:100%;height:clamp(240px,32vw,340px)}
 .gb-stage-note{position:absolute;left:0;bottom:10px}
 .gb-stage-hit{position:absolute;right:0;bottom:10px}
-@media (max-width:559px){
-  .gb-stage{gap:14px;padding:6px 0 2px;text-align:center}
+@container (max-width:679px){
   .gb-stage-note,.gb-stage-hit{position:static}
   .gb-stage-hit{justify-content:center;margin-top:10px}
+  .gb-stage-note{margin-top:14px;text-align:center}
 }
 
 /* Glossary: a sheet from the bottom on touch, a centred dialog on desktop. */
