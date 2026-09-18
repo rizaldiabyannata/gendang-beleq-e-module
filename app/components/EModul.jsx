@@ -1616,6 +1616,9 @@ export default class EModul extends React.Component {
         drum: st.drum, amp: st.amp, speed: SPEED[st.medium],
         frek: { tengah: this.pitch('tengah'), pinggir: this.pitch('pinggir') },
         onHit: (this.hitZone = this.hitZone || ((z) => this.hit(z))),
+        // iOS Safari only unlocks audio inside the gesture handler itself; by the time
+        // useFrame reaches onHit the tap has ended, so open the AudioContext right away.
+        bangun: (this.bangunAudio = this.bangunAudio || (() => this.ac())),
       },
       mediumInfo: 'Cepat rambat ≈ ' + SPEED[st.medium] + ' m/s. ' + (st.medium === 'udara' ? 'Bunyi paling akrab kita dengar di udara.' : st.medium === 'air' ? 'Di air bunyi merambat lebih cepat, tapi warnanya terdengar lebih redup.' : 'Di zat padat bunyi paling cepat merambat karena partikelnya paling rapat.'),
       // The findings used to be printed here in full, which left a student nothing

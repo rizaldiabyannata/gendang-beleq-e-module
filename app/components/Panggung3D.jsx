@@ -146,7 +146,7 @@ function Gendang({ drum, minta, lat, onSiap }) {
   const sisi = 2 * (R_MAKS + 0.15);
   return (
     <group scale={SKALA[drum] || 1}>
-      <primitive object={scene} onPointerDown={pilih} />
+      <primitive object={scene} onClick={pilih} />
       <mesh rotation-x={-Math.PI / 2} position={[0, rootY + Y_MEMBRAN + 0.002, 0]} raycast={() => null} renderOrder={1}>
         <planeGeometry args={[sisi, sisi]} />
         <shaderMaterial ref={mat} vertexShader={VERT} fragmentShader={FRAG} uniforms={uniforms}

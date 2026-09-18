@@ -18,13 +18,26 @@ class Jaga extends Component {
   render() { return this.state.rusak ? null : this.props.children; }
 }
 
-export default function Drum3D({ drum, amp, frek, speed, onHit }) {
+export default function Drum3D({ drum, amp, frek, speed, onHit, bangun }) {
   const [minta, setMinta] = useState(null);
   const [siap, setSiap] = useState(false);
-  const [rusak, setRusak] = useState(false);
+  // R3F v9 creates its WebGLRenderer inside an async configure() nobody awaits, so a
+  // missing WebGL context becomes an unhandled rejection the Jaga boundary never sees.
+  // Probe once, lazily, so it never runs during SSR (no `document`); on a device that
+  // does lack WebGL this reruns the initializer during hydration and briefly disagrees
+  // with the server markup, which React self-corrects — Jaga still catches errors that
+  // do reach it (GLB load, chunk load).
+  const [rusak, setRusak] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    const c = document.createElement('canvas');
+    return !(c.getContext('webgl2') || c.getContext('webgl'));
+  });
   const lat = useRef(null);
 
   const tabuh = (zona, sudut) => {
+    // iOS Safari only unlocks audio synchronously inside the gesture handler; by the
+    // time useFrame reaches onHit the tap has already ended.
+    bangun();
     if (!siap || rusak) { onHit(zona); return; }
     setMinta((m) => ({ zona, sudut, n: m ? m.n + 1 : 1 }));
   };
