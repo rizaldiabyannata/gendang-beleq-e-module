@@ -10,7 +10,7 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
-  JUMLAH, KONTAK, PHI, R_MAKS, SELESAI, WAKTU, Y_MEMBRAN,
+  CINCIN_FRAG, CINCIN_VERT, KONTAK, PHI, R_MAKS, SELESAI, WAKTU, Y_MEMBRAN,
   cincin, genggam, pose, sudutAyun, titikTabuh, zonaDari,
 } from './gelombang';
 
@@ -22,28 +22,6 @@ const SKALA = { mame: 1, nine: 0.8 };
 const REDUP = typeof window !== 'undefined' && !!window.matchMedia
   && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SUMBU_X = new THREE.Vector3(1, 0, 0);
-
-// Every ring of one strike is drawn by one flat plane: ring k sits at radius
-// laju·t − k·jarak, so the spacing between rings is the wavelength and every ring
-// keeps the same thickness however far it has travelled.
-const VERT = /* glsl */ `
-varying vec2 vP;
-void main() { vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-const FRAG = /* glsl */ `
-uniform vec2 uPusat;
-uniform float uT, uLaju, uJarak, uTebal, uOpasitas;
-uniform vec3 uWarna;
-varying vec2 vP;
-void main() {
-  float d = distance(vP, uPusat), a = 0.0;
-  for (int k = 0; k < ${JUMLAH}; k++) {
-    float r = uLaju * uT - float(k) * uJarak;
-    if (r <= 0.0) continue;
-    a = max(a, (1.0 - smoothstep(0.0, uTebal, abs(d - r))) * (1.0 - r / ${R_MAKS.toFixed(3)}));
-  }
-  if (a <= 0.0) discard;
-  gl_FragColor = vec4(uWarna, a * uOpasitas);
-}`;
 
 function pasang(stick, g, phi) {
   const p = pose(g, phi);
@@ -152,7 +130,7 @@ function Gendang({ drum, minta, lat, onSiap }) {
       <primitive object={scene} onClick={pilih} />
       <mesh rotation-x={-Math.PI / 2} position={[0, rootY + Y_MEMBRAN + 0.002, 0]} raycast={() => null} renderOrder={1}>
         <planeGeometry args={[sisi, sisi]} />
-        <shaderMaterial ref={mat} vertexShader={VERT} fragmentShader={FRAG} uniforms={uniforms}
+        <shaderMaterial ref={mat} vertexShader={CINCIN_VERT} fragmentShader={CINCIN_FRAG} uniforms={uniforms}
           transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
       </mesh>
     </group>

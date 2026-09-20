@@ -1,7 +1,7 @@
 import React from 'react';
 import { sx } from './sx';
 import Rich from './Rich';
-import Drum3D from './Drum3D';
+import Drum3D, { Rombongan } from './Drum3D';
 
 const PANEL = "background:var(--panel);border-radius:var(--r-l);padding:22px;color:var(--panel-ink)";
 const READOUT = "font:500 15px/1 var(--font-jetbrains),ui-monospace,monospace;color:var(--gold);white-space:nowrap";
@@ -70,7 +70,7 @@ function Misi({ misi, misiLabel, dark }) {
 }
 
 export default function Lab({ v }) {
-  const { labAnsambel, ansSliders, ansBeat, ansBeatLabel, ansPulseStyle, ansBtnLabel, ansPlay, ansHint, dopSourceRef, dopWaveRef, dopHeardRef, dbValue, dopBtnLabel, dopHeard, dopReset, dopSliders, dopSourceStyle, dopStatus, dopStatusColor, dopToggle, dopWaveStyle, drum3d, drumLabel, drumOpts, hitLabel, labDoppler, labDrum, labTabs, mediumInfo, mediumOpts, misi, misiLabel, sliders, temuan, temuanLabel, waveInfo, waveRef } = v;
+  const { labAnsambel, ansSliders, ansBeat, ansBeatLabel, ansPulseStyle, ansBtnLabel, ansPlay, ansHint, dopAmbilPos, dopFrek, dopJalan, dopSourceRef, dopWaveRef, dopHeardRef, dbValue, dopBtnLabel, dopHeard, dopReset, dopSliders, dopSourceStyle, dopStatus, dopStatusColor, dopToggle, dopWaveStyle, drum3d, drumLabel, drumOpts, hitLabel, labDoppler, labDrum, labTabs, mediumInfo, mediumOpts, misi, misiLabel, sliders, temuan, temuanLabel, waveInfo, waveRef } = v;
 
   const slider = (s, sI, accent) => (
     <div key={sI} style={sx(s.locked ? "opacity:.5" : "")}>
@@ -168,6 +168,9 @@ export default function Lab({ v }) {
               <div style={sx("font:500 13px/1.4 var(--font-outfit),sans-serif;text-align:right;color:" + dopStatusColor)}>{dopStatus}</div>
             </div>
             <div style={sx("position:relative;height:clamp(158px,20vw,240px);background:var(--panel-2);overflow:hidden;background-image:repeating-linear-gradient(90deg,rgba(217,150,47,.1) 0 2px,transparent 2px 18px)")}>
+              {/* The 3D procession takes over this box; its children are the old flat
+                  track, still drawn on devices that cannot give us WebGL2. */}
+              <Rombongan jalan={dopJalan} frek={dopFrek} ambilPos={dopAmbilPos}>
               <div aria-hidden="true" style={sx("position:absolute;left:0;right:0;top:52%;height:1px;background:var(--panel-rule)")}></div>
               <div style={sx("position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px")}>
                 <div aria-hidden="true" style={sx("width:24px;height:24px;border-radius:50%;background:var(--panel-ink)")}></div>
@@ -178,6 +181,7 @@ export default function Lab({ v }) {
                 <div style={sx("font:500 12px/1 var(--font-outfit),sans-serif;color:var(--gold);white-space:nowrap")}>Rombongan</div>
               </div>
               <div aria-hidden="true" ref={dopWaveRef} style={sx(dopWaveStyle)}></div>
+              </Rombongan>
             </div>
           </div>
 

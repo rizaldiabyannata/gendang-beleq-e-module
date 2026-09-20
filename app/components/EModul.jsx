@@ -14,6 +14,7 @@ import {
   SPEED, CMS_DEFAULTS, cloneCms,
   TYPES, TYPE_LABEL, TYPE_XP, LETTERS, seededPerm,
 } from './module-data';
+import { JANGKAU, LAJU_POS } from './gelombang';
 import SideNav from './SideNav';
 import Header from './Header';
 import StepIntro from './StepIntro';
@@ -642,12 +643,16 @@ export default class EModul extends React.Component {
     this._dp = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
     if (this._dopBuf) {
       this._do = ctx.createBufferSource(); this._do.buffer = this._dopBuf;
+      // Rekamannya 8 detik, satu lintasan kini 2·JANGKAU/LAJU_POS detik, jadi tanpa
+      // pengulangan sisa lintasan akan senyap. Rombongan sungguhan memang menabuh
+      // terus-menerus, jadi perulangan penuh adalah bentuk yang benar.
+      this._do.loop = true;
     } else {
       this._do = ctx.createOscillator(); this._do.type = 'triangle';
     }
     this._do.connect(this._dg);
     if (this._dp) { this._dg.connect(this._dp); this._dp.connect(this.out()); } else this._dg.connect(this.out());
-    this.mixDop(-1);
+    this.mixDop(-JANGKAU);
     this._do.start();
   }
   mixDop(pos) {
@@ -675,11 +680,11 @@ export default class EModul extends React.Component {
   dopplerHeard(pos) { return Math.round(dopplerOf(this.state, pos)); }
 
   stepDoppler(dt) {
-    const pos = this._dopPos + dt * 0.34;
+    const pos = this._dopPos + dt * LAJU_POS;
     const heard = this.dopplerHeard(pos);
-    if (pos > 1) {
-      this._dopPos = 1;
-      this.setState({ dopRunning: false, dopPos: 1, dopHeard: heard });
+    if (pos > JANGKAU) {
+      this._dopPos = JANGKAU;
+      this.setState({ dopRunning: false, dopPos: JANGKAU, dopHeard: heard });
       this.stopDop();
       return;
     }
@@ -882,8 +887,8 @@ export default class EModul extends React.Component {
         misi: i, misiPilih: null, labTab: it.sim,
         drum: p.drum, freq: p.freq, tension: p.tension, amp: p.amp, medium: p.medium,
         dopF: p.dopF, dopV: p.dopV, ansMame: p.ansMame, ansNine: p.ansNine,
-        dopRunning: false, dopPos: -1, dopHeard: Math.round(p.dopF),
-      }, () => { this._dopPos = -1; this.stopDop(); });
+        dopRunning: false, dopPos: -JANGKAU, dopHeard: Math.round(p.dopF),
+      }, () => { this._dopPos = -JANGKAU; this.stopDop(); });
     };
 
     const ARAH = [['naik', 'Naik'], ['tetap', 'Tetap'], ['turun', 'Turun']];
@@ -1221,7 +1226,7 @@ export default class EModul extends React.Component {
     }));
 
     const gamiOn = this.props.gamifikasiOn !== false;
-    const dopClamped = Math.max(-1, Math.min(1, st.dopPos));
+    const dopClamped = Math.max(-1, Math.min(1, st.dopPos / JANGKAU));
     const dopLeft = (14 + (dopClamped + 1) / 2 * 72).toFixed(2);
 
 
@@ -1605,6 +1610,9 @@ export default class EModul extends React.Component {
       dopSourceRef: (this.dopSourceRef = this.dopSourceRef || React.createRef()),
       dopWaveRef: (this.dopWaveRef = this.dopWaveRef || React.createRef()),
       dopHeardRef: (this.dopHeardRef = this.dopHeardRef || React.createRef()),
+      // The 3D procession reads the position straight from the loop, so walking
+      // never costs a React render — same trick as paintDoppler.
+      dopAmbilPos: (this._ambilPos = this._ambilPos || (() => (this._dopPos === undefined ? -JANGKAU : this._dopPos))),
       sliders, drumOpts, mediumOpts,
       dbValue: dbNow > 0 ? dbNow : '—',
       drumLabel: st.drum === 'mame' ? 'GENDANG MAME' : 'GENDANG NINE',
@@ -1643,13 +1651,15 @@ export default class EModul extends React.Component {
       dopHeard: st.dopHeard,
       dopStatus: st.dopRunning ? (st.dopPos < 0 ? 'MENDEKAT · frekuensi terdengar NAIK' : 'MENJAUH · frekuensi terdengar TURUN') : 'siap dijalankan',
       dopStatusColor: st.dopRunning ? (st.dopPos < 0 ? 'var(--gold)' : '#8fdcc7') : 'var(--panel-ink-2)',
+      dopJalan: st.dopRunning,
+      dopFrek: st.dopF,
       dopBtnLabel: st.dopRunning ? 'Hentikan' : 'Jalankan rombongan',
       dopToggle: () => {
         if (st.dopRunning) { this.stopDop(); this.setState({ dopRunning: false }); return; }
-        this._dopPos = -1;
-        this.setState({ dopRunning: true, dopPos: -1, dopHeard: st.dopF }, () => { this.startDop(); this.ensureLoop(); });
+        this._dopPos = -JANGKAU;
+        this.setState({ dopRunning: true, dopPos: -JANGKAU, dopHeard: st.dopF }, () => { this.startDop(); this.ensureLoop(); });
       },
-      dopReset: () => { this.stopDop(); this._dopPos = -1; this.setState({ dopRunning: false, dopPos: -1, dopHeard: st.dopF }); },
+      dopReset: () => { this.stopDop(); this._dopPos = -JANGKAU; this.setState({ dopRunning: false, dopPos: -JANGKAU, dopHeard: st.dopF }); },
       dopSliders: [
         { label: 'Frekuensi sumber (f)', value: st.dopF + ' Hz', min: 200, max: 900, step: 10, raw: st.dopF, onInput: e => this.setState({ dopF: +e.target.value }) },
         // Capped at 20 m/s (72 km/h). The old ceiling of 60 m/s described a wedding

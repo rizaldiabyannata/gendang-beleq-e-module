@@ -8,10 +8,21 @@ import dynamic from 'next/dynamic';
 import { sx } from './sx';
 
 const Panggung3D = dynamic(() => import('./Panggung3D'), { ssr: false });
+const Rombongan3D = dynamic(() => import('./Rombongan3D'), { ssr: false });
 
 // Cached across mounts so the probe's throwaway canvas is only created once —
 // each WebGL context otherwise counts toward Chrome's ~16-context ceiling.
 let webgl2Tersedia;
+
+// R3F v9 creates its WebGLRenderer inside an async configure() nobody awaits, so a
+// missing WebGL context becomes an unhandled rejection the Jaga boundary never sees.
+// three r163+ also throws if only WebGL1 is available, so the probe must require
+// webgl2 specifically. Probed once, lazily, never during SSR (no `document`).
+function adaWebgl2() {
+  if (webgl2Tersedia !== undefined) return webgl2Tersedia;
+  if (typeof document === 'undefined') return true;
+  return (webgl2Tersedia = !!document.createElement('canvas').getContext('webgl2'));
+}
 
 const TOMBOL = "min-height:44px;padding:0 16px;border:1px solid var(--panel-rule);border-radius:var(--r-m);background:transparent;color:var(--panel-ink);font:500 15px/1 var(--font-outfit),sans-serif;cursor:pointer";
 
@@ -25,21 +36,11 @@ class Jaga extends Component {
 export default function Drum3D({ drum, amp, frek, speed, onHit, bangun }) {
   const [minta, setMinta] = useState(null);
   const [siap, setSiap] = useState(false);
-  // R3F v9 creates its WebGLRenderer inside an async configure() nobody awaits, so a
-  // missing WebGL context becomes an unhandled rejection the Jaga boundary never sees.
-  // three r163+ also throws if only WebGL1 is available, so the probe must require
-  // webgl2 specifically. Probe once, lazily, so it never runs during SSR (no
-  // `document`); EModul's initial screen is 'home' and Lab only renders on the lab
-  // screen, so Drum3D is never part of the static-export HTML and always mounts
-  // client-side after hydration — this initializer never reruns then. Jaga still
-  // catches errors that do reach it (GLB load, chunk load).
-  const [rusak, setRusak] = useState(() => {
-    if (webgl2Tersedia !== undefined) return !webgl2Tersedia;
-    if (typeof document === 'undefined') return false;
-    const c = document.createElement('canvas');
-    webgl2Tersedia = !!c.getContext('webgl2');
-    return !webgl2Tersedia;
-  });
+  // EModul's initial screen is 'home' and Lab only renders on the lab screen, so
+  // Drum3D is never part of the static-export HTML and always mounts client-side
+  // after hydration — this initializer never reruns then. Jaga still catches the
+  // errors that do reach it (GLB load, chunk load).
+  const [rusak, setRusak] = useState(() => !adaWebgl2());
   const lat = useRef(null);
 
   const tabuh = (zona, sudut) => {
@@ -71,6 +72,25 @@ export default function Drum3D({ drum, amp, frek, speed, onHit, bangun }) {
         <button onClick={() => tabuh('tengah', 0)} style={sx(TOMBOL)}>Tabuh tengah</button>
         <button onClick={() => tabuh('pinggir', 0)} style={sx(TOMBOL)}>Tabuh pinggir</button>
       </div>
+    </div>
+  );
+}
+
+// The Doppler lab's procession, same fallback shape as the drum: when this device
+// cannot draw WebGL2 the children — the old CSS track, dot and ring — are shown
+// instead, and the lab keeps working exactly as before.
+export function Rombongan({ jalan, frek, ambilPos, children }) {
+  const [rusak, setRusak] = useState(() => !adaWebgl2());
+  const lat = useRef(null);
+  // The stage reads the knob values of the moment it draws, not of the last render.
+  useEffect(() => { lat.current = { frek, ambilPos }; });
+  if (rusak) return <>{children}</>;
+  return (
+    <div style={sx("position:absolute;inset:0")} role="img" aria-label="Rombongan tiga penabuh gendang beleq berjalan melintasi pendengar.">
+      <Jaga onRusak={() => setRusak(true)}>
+        <Rombongan3D jalan={jalan} lat={lat} />
+      </Jaga>
+      <span style={sx("position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font:500 12px/1 var(--font-outfit),sans-serif;color:var(--panel-ink-2);pointer-events:none")}>Kamu</span>
     </div>
   );
 }

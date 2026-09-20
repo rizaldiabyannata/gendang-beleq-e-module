@@ -21,6 +21,58 @@ export const SELESAI = KONTAK + WAKTU.balik;
 export const JUMLAH = 4;         // cincin per tabuhan
 export const R_MAKS = 0.36;      // cincin padam setelah sejauh ini dari titik tabuh
 
+// Setiap cincin satu tabuhan digambar oleh satu bidang datar: cincin k duduk di
+// jari-jari laju·t − k·jarak, jadi jarak antar-cincin adalah panjang gelombang dan
+// setiap cincin tetap setebal itu sejauh apa pun ia sudah merambat.
+export const CINCIN_VERT = /* glsl */ `
+varying vec2 vP;
+void main() { vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+export const CINCIN_FRAG = /* glsl */ `
+uniform vec2 uPusat;
+uniform float uT, uLaju, uJarak, uTebal, uOpasitas;
+uniform vec3 uWarna;
+varying vec2 vP;
+void main() {
+  float d = distance(vP, uPusat), a = 0.0;
+  for (int k = 0; k < ${JUMLAH}; k++) {
+    float r = uLaju * uT - float(k) * uJarak;
+    if (r <= 0.0) continue;
+    a = max(a, (1.0 - smoothstep(0.0, uTebal, abs(d - r))) * (1.0 - r / ${R_MAKS.toFixed(3)}));
+  }
+  if (a <= 0.0) discard;
+  gl_FragColor = vec4(uWarna, a * uOpasitas);
+}`;
+
+// --- Rombongan penabuh di lab Doppler (public/penabuh-gendang-beleq-animasi.glb) ---
+export const LAJU_POS = 0.34;      // laju sumber pada sumbu pos per detik
+// Ujung jalan, dalam satuan pos. Inilah tuas durasi: satu lintasan memakan
+// 2·JANGKAU/LAJU_POS detik (3 → ±18 detik) tanpa mengubah laju jalan sedikit pun,
+// karena yang memanjang adalah jalannya, bukan langkahnya. Kamera hanya
+// membingkai ±X_JALUR, jadi rombongan datang dan pergi dari luar bingkai.
+export const JANGKAU = 3;
+export const X_JALUR = 3.2;        // pos = ±1 berada di x = ±X_JALUR meter
+export const JARAK_BARIS = 0.7;    // jarak antar-penabuh yang berjajar
+export const DURASI_JALAN = 1.2;   // panjang klip BerjalanMenabuh
+export const TABUH_T = [0.4, 1.0]; // dua pukulan per putaran klip
+export const LAJU_ALAMI = 1.1;     // laju jalan klip pada timeScale 1, m/detik
+
+export function xDari(pos) { return jepit(pos, -JANGKAU, JANGKAU) * X_JALUR; }
+
+// Klip diputar sepas laju geser di layar supaya kaki tidak meluncur.
+export function skalaJalan() { return LAJU_POS * X_JALUR / LAJU_ALAMI; }
+
+export function durasiLintasan() { return 2 * JANGKAU / LAJU_POS; }
+
+// Benar bila ada titik tabuh yang terlewati antara waktu klip t0 dan t1.
+export function lewatTabuh(t0, t1, durasi = DURASI_JALAN, titik = TABUH_T) {
+  return titik.some((h) => Math.floor((t1 - h) / durasi) > Math.floor((t0 - h) / durasi));
+}
+
+// Tabuhan beruntun: cincin k adalah tabuhan k kali yang lalu, jadi uT digeser
+// sebanyak tabuhan yang sudah lewat (maksimal JUMLAH-1) dan cincin lama tidak
+// tersetel ulang setiap ada tabuhan baru.
+export function uTKereta(sejak, n, P) { return sejak + Math.min(Math.max(n - 1, 0), JUMLAH - 1) * P; }
+
 export function zonaDari(r, jari = R) {
   return r < 0.5 * jari ? 'tengah' : 'pinggir';
 }
