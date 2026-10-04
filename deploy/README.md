@@ -90,10 +90,10 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST https://api.contoh.id/functions
 
 ## 4. Migrasi dan akun guru
 
-Jalankan ketiga migrasi berurutan:
+Jalankan keempat migrasi berurutan:
 
 ```bash
-for f in 0001_init.sql 0002_seed_content.sql 0003_progress_realtime.sql; do
+for f in 0001_init.sql 0002_seed_content.sql 0003_progress_realtime.sql 0004_lkpd_column_grants.sql; do
   docker exec -i supabase-db psql -U postgres -d postgres < "supabase/migrations/$f"
 done
 ```

@@ -63,6 +63,16 @@ export default class EModul extends React.Component {
 
   componentDidMount() {
     this.bootSession();
+    // Back and Forward. The panel reopens through openPanel so its live channel
+    // comes back with it; anyone who is no longer a teacher lands on home instead.
+    this.onPop = (e) => {
+      const s = (e.state && e.state.screen) || 'home';
+      this._pop = true;
+      if (s === 'admin' && this.state.role === 'guru') this.openPanel();
+      else this.go(s === 'admin' ? 'home' : s);
+      this._pop = false;
+    };
+    window.addEventListener('popstate', this.onPop);
     this.env = 0; this.phase = 0; this.tPrev = performance.now();
     this.loop = (t) => {
       const dt = Math.min(0.05, (t - this.tPrev) / 1000); this.tPrev = t;
@@ -109,6 +119,7 @@ export default class EModul extends React.Component {
     if ((this.waveRef && this.waveRef.current) || this.state.dopRunning) this.ensureLoop();
   }
   componentWillUnmount() {
+    window.removeEventListener('popstate', this.onPop);
     clearTimeout(this._draftT);
     clearTimeout(this._lkpdT);
     clearTimeout(this._progT);
@@ -721,8 +732,11 @@ export default class EModul extends React.Component {
     // Every screen change in this component routes through here, so one guard closes
     // every exit from the panel and the channel never outlives the view that uses it.
     if (this.state.screen === 'admin' && screen !== 'admin') this.stopWatch();
+    // One history entry per screen, so the phone's Back button steps back through
+    // the module instead of dropping the student out of it mid-lesson.
+    if (!this._pop && screen !== this.state.screen) window.history.pushState({ screen }, '');
     this.setState({ screen: screen }, () => this.focusMain());
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
   focusMain() { if (this.mainRef && this.mainRef.current) this.mainRef.current.focus({ preventScroll: true }); }
 
@@ -766,8 +780,7 @@ export default class EModul extends React.Component {
       const d = stepDefs[i];
       if (!d) return;
       if (!stepOpen(d[4])) { this.toast('Tahapan ini belum dibuka guru'); return; }
-      this.setState({ screen: d[4] }, () => this.focusMain());
-      window.scrollTo(0, 0);
+      this.go(d[4]);
     };
     const firstOpen = stepDefs.findIndex(d => !st.done[d[0]]);
     const currentIdx = firstOpen === -1 ? stepDefs.length - 1 : firstOpen;
@@ -996,7 +1009,7 @@ export default class EModul extends React.Component {
         meta: s.n + ' soal · KKM ' + (b.kkm || 70),
         statusLabel: locked ? 'Dikunci guru' : s.complete ? 'Nilai ' + s.pct : s.done ? s.done + '/' + s.n + ' terjawab' : 'Belum dikerjakan',
         typeChips: types.map(t => ({ label: TYPE_LABEL[t] || t })),
-        onOpen: () => { if (locked) { this.toast('Bank soal ini belum dibuka guru'); return; } this.setState({ bankId: b.id }); window.scrollTo(0, 0); },
+        onOpen: () => { if (locked) { this.toast('Bank soal ini belum dibuka guru'); return; } this.setState({ bankId: b.id }); window.scrollTo({ top: 0, behavior: 'instant' }); },
         style: 'display:flex;flex-direction:column;gap:12px;width:100%;padding:20px;border-radius:var(--r-l);text-align:left;font-family:inherit;cursor:' + (locked ? 'not-allowed' : 'pointer') + ';'
           + (locked ? 'border:1px dashed var(--rule-2);background:transparent;color:var(--ink-3)'
             : 'border:1px solid var(--rule);background:var(--raised);color:var(--ink);box-shadow:var(--shadow)'),
@@ -1086,7 +1099,7 @@ export default class EModul extends React.Component {
       if (it.type === 'isian') {
         o.inputVal = done ? String(rec.v || '') : (dv || '');
         o.onInput = (e) => setDraft(k, e.target.value);
-        o.onIsianKey = (e) => { if (e.key === 'Enter') submit(curBank, qi, it, (this.state.draft || {})[k]); };
+        o.onIsianKey = (e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submit(curBank, qi, it, (this.state.draft || {})[k]); };
         o.inputStyle = 'width:100%;min-height:54px;border:1.5px solid ' + (done ? (ok ? 'var(--ok)' : 'var(--warn)') : 'var(--rule-2)') + ';border-radius:var(--r-m);padding:0 15px;font:500 16px/1 var(--font-outfit),sans-serif;background:' + (done ? (ok ? 'var(--ok-bg)' : 'var(--warn-bg)') : 'var(--paper)') + ';color:var(--ink)';
         o.inputDisabled = done;
         o.showKunci = done && !ok;
@@ -1510,8 +1523,8 @@ export default class EModul extends React.Component {
       },
 
       infoPengantar: st.infoTab === 'pengantar',
-      goDoppler: () => { this.setState({ screen: 'lab', labTab: 'doppler' }); window.scrollTo(0, 0); },
-      goGlosarium: () => { this.setState({ screen: 'materi', materiTab: 'glosarium' }); window.scrollTo(0, 0); },
+      goDoppler: () => { this.setState({ labTab: 'doppler' }); this.go('lab'); },
+      goGlosarium: () => { this.setState({ materiTab: 'glosarium' }); this.go('materi'); },
       goPeringkat: () => this.go('peringkat'),
 
       infoTabs,
@@ -1729,7 +1742,7 @@ export default class EModul extends React.Component {
       bankScoreStyle: 'font-family:var(--font-instrument),serif;font-size:48px;line-height:1;color:'
         + (bankStats.complete ? (bankStats.pct >= ((curBank && curBank.kkm) || 70) ? 'var(--ok)' : 'var(--warn)') : 'var(--ink-3)'),
       bankBarStyle: 'height:100%;width:100%;transform-origin:left;transform:scaleX(' + (Math.max(2, bankStats.n ? bankStats.done / bankStats.n * 100 : 0) / 100).toFixed(4) + ');background:var(--gold);transition:transform .35s ease',
-      backToBanks: () => { this.setState({ bankId: null }); window.scrollTo(0, 0); },
+      backToBanks: () => { this.setState({ bankId: null }); window.scrollTo({ top: 0, behavior: 'instant' }); },
       resetKuis: () => {
         if (!curBank) return;
         if (!window.confirm('Ulangi bank soal ini dari awal? Semua jawaban dan XP dari bank ini akan dihapus.')) return;

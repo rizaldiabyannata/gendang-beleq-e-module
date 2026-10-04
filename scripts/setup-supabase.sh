@@ -376,6 +376,13 @@ note "Hasil yang benar: 'Success. No rows returned'."
 warn "Kalau muncul 'already exists', berarti migrasi ini sudah pernah jalan. Aman, lanjut saja."
 pause "Tekan Enter kalau SQL-nya sudah dijalankan."
 
+say "Dua migrasi susulan: penyimpanan progres siswa dan pembaruan langsung di panel"
+say "guru, lalu pembatasan kolom LKPD supaya nilai hanya bisa diisi guru."
+offer_sql "supabase/migrations/0003_progress_realtime.sql" "progres dan realtime"
+pause "Tekan Enter kalau sudah dijalankan."
+offer_sql "supabase/migrations/0004_lkpd_column_grants.sql" "izin kolom LKPD"
+pause "Tekan Enter kalau sudah dijalankan."
+
 # ── 5 ─────────────────────────────────────────────────────────────────────
 stage "Isi konten bawaan"
 say "Mengisi draf guru dengan seluruh materi, glosarium, dan 7 bank soal bawaan,"

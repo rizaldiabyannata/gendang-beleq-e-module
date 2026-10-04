@@ -4,6 +4,29 @@ import React from 'react';
 // shows exactly one at a time and the whole scoring action sits under the hand:
 // keys 0-9 set a mark, Enter saves and advances.
 export default function GradeEssay({ busy, index, item, note, onBack, onNote, onSave, onSkip, score, setScore, total }) {
+  // Listens on the document, not on the wrapper. Saving disables the button that had
+  // focus, focus falls back to <body>, and a handler on the wrapper would go deaf for
+  // every essay after the first.
+  React.useEffect(() => {
+    if (!item) return undefined;
+    const onKey = (e) => {
+      const t = e.target, tag = t.tagName;
+      const typing = tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT' || t.isContentEditable;
+      if (e.key === 'Enter') {
+        // In the comment box Enter is a newline; on Back, Skip and the like it is
+        // that button's own click. Only the score buttons hand Enter over to save.
+        if (typing ? !(e.metaKey || e.ctrlKey) : (tag === 'BUTTON' || tag === 'A') && !t.closest('.gb-scores')) return;
+        e.preventDefault();
+        if (!busy && score != null && !e.repeat) onSave();
+        return;
+      }
+      if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (/^[0-9]$/.test(e.key)) setScore(e.key === '0' ? 100 : Number(e.key) * 10);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  });
+
   if (!item) {
     return (
       <div className="gb-empty">
@@ -16,16 +39,8 @@ export default function GradeEssay({ busy, index, item, note, onBack, onNote, on
     );
   }
 
-  const onKey = (e) => {
-    if (e.target.tagName === 'TEXTAREA' && e.key !== 'Enter') return;
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey || e.target.tagName !== 'TEXTAREA')) {
-      e.preventDefault(); onSave(); return;
-    }
-    if (/^[0-9]$/.test(e.key) && e.target.tagName !== 'TEXTAREA') setScore(e.key === '0' ? 100 : Number(e.key) * 10);
-  };
-
   return (
-    <div onKeyDown={onKey}>
+    <div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: 16 }}>
         <button type="button" className="gb-btn gb-btn-2 gb-btn-sm" onClick={onBack}>‹ Daftar nilai</button>
         <span className="gb-eyebrow">Esai {index + 1} dari {total}</span>

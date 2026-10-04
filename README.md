@@ -61,7 +61,7 @@ lalu tekan **Terbitkan** di tab Data agar konten sampai ke siswa.
 1. Buat proyek Supabase, salin Project URL dan anon key ke `.env.local`
    (lihat `.env.local.example`).
 2. Aktifkan **Allow anonymous sign-ins** di Authentication → Sign In / Providers.
-3. Jalankan `supabase/migrations/0001_init.sql` lalu `0002_seed_content.sql` di SQL Editor.
+3. Jalankan keempat berkas di `supabase/migrations/` berurutan, `0001` sampai `0004`, di SQL Editor.
 4. Buat akun guru di Authentication → Users, salin UID-nya, lalu:
 
    ```sql
